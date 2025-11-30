@@ -1,0 +1,45 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(uuid())
+  telegramId    String   @unique
+  username      String?
+  firstName     String?
+  lastName      String?
+  referredBy    String?
+  referralChain String[] @default([])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  referrer User? @relation("ReferralChain", fields: [referredBy], references: [telegramId], onDelete: SetNull)
+  referrals User[] @relation("ReferralChain")
+
+  @@map("users")
+}
+
+model SystemLog {
+  id        String   @id @default(cuid())
+  action    String
+  userId    String?
+  depositId String?
+  amount    Float?
+  status    String
+  details   Json?
+  error     String?
+  createdAt DateTime @default(now())
+
+  @@index([action, createdAt])
+  @@index([userId])
+  @@map("system_logs")
+}
+
