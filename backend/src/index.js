@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import app from './app.js';
 import { startDailyROIJob } from './jobs/dailyROI.job.js';
+import './migrate.js'; // Run migrations on startup
 
 // Load environment variables
 dotenv.config();
