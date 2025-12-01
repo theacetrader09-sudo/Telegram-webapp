@@ -433,6 +433,47 @@ export const completeWithdrawalAdmin = async (withdrawalId, transactionHash) => 
 };
 
 /**
+ * Backfill ROI for all active deposits
+ * POST /admin/backfill-roi
+ */
+export const backfillROIAdmin = async () => {
+  try {
+    const adminToken = localStorage.getItem('adminToken');
+    if (!adminToken) {
+      return {
+        success: false,
+        error: 'Admin not authenticated'
+      };
+    }
+
+    const response = await fetch(`${API_BASE_URL}/admin/backfill-roi`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminToken}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: data.error || 'Failed to backfill ROI'
+      };
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Backfill ROI error:', error);
+    return {
+      success: false,
+      error: error.message || 'Network error'
+    };
+  }
+};
+
+/**
  * Run ROI manually (admin)
  */
 export const runROIAdmin = async (userId) => {
