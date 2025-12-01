@@ -11,7 +11,9 @@ import {
   getAllWithdrawals,
   approveWithdrawal,
   rejectWithdrawal,
-  completeWithdrawal
+  completeWithdrawal,
+  getAllUsers,
+  getUserById
 } from '../controllers/admin.controller.js';
 
 const router = express.Router();
@@ -35,5 +37,9 @@ router.get('/withdrawals', getAllWithdrawals);
 router.post('/withdrawals/:id/approve', approveWithdrawal);
 router.post('/withdrawals/:id/reject', rejectWithdrawal);
 router.post('/withdrawals/:id/complete', completeWithdrawal);
+
+// User management
+router.get('/users', getAllUsers);
+router.get('/users/:id', getUserById);
 
 export default router;

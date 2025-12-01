@@ -251,6 +251,34 @@ export default function AdminDashboard() {
               </p>
             </div>
           </Link>
+
+          <Link href="/admin/users" style={{ textDecoration: 'none' }}>
+            <div style={{
+              backgroundColor: 'white',
+              padding: '20px',
+              borderRadius: '12px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              border: '1px solid #e5e7eb',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+            }}
+            >
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', color: '#111827' }}>
+                👥 User Management
+              </h3>
+              <p style={{ margin: 0, fontSize: '14px', color: '#6b7280' }}>
+                View all users and their details
+              </p>
+            </div>
+          </Link>
         </div>
       </div>
 

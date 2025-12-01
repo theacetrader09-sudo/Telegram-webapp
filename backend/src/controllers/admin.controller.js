@@ -735,3 +735,221 @@ export const completeWithdrawal = async (req, res) => {
   }
 };
 
+/**
+ * Get all users with their details
+ * GET /admin/users
+ */
+export const getAllUsers = async (req, res) => {
+  try {
+    const { page = 1, limit = 50, search } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const take = parseInt(limit);
+
+    // Build where clause for search
+    const where = search ? {
+      OR: [
+        { telegramId: { contains: search, mode: 'insensitive' } },
+        { username: { contains: search, mode: 'insensitive' } },
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } }
+      ]
+    } : {};
+
+    // Get users with wallet and deposit info
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        include: {
+          wallet: true,
+          referrer: {
+            select: {
+              telegramId: true,
+              username: true,
+              firstName: true,
+              lastName: true
+            }
+          },
+          _count: {
+            select: {
+              referrals: true,
+              deposits: true,
+              withdrawals: true
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take
+      }),
+      prisma.user.count({ where })
+    ]);
+
+    // Calculate additional stats for each user
+    const usersWithStats = await Promise.all(
+      users.map(async (user) => {
+        // Get total deposits amount
+        const deposits = await prisma.deposit.aggregate({
+          where: { userId: user.id },
+          _sum: { amount: true },
+          _count: true
+        });
+
+        // Get total withdrawals amount
+        const withdrawals = await prisma.withdrawal.aggregate({
+          where: { userId: user.id },
+          _sum: { amount: true },
+          _count: true
+        });
+
+        // Get active deposits count
+        const activeDeposits = await prisma.deposit.count({
+          where: {
+            userId: user.id,
+            status: 'ACTIVE'
+          }
+        });
+
+        return {
+          id: user.id,
+          telegramId: user.telegramId,
+          username: user.username,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          referredBy: user.referredBy,
+          referrer: user.referrer,
+          referralChain: user.referralChain,
+          referralCount: user._count.referrals,
+          walletBalance: user.wallet?.balance || 0,
+          totalDeposits: deposits._sum.amount || 0,
+          depositCount: deposits._count || 0,
+          activeDeposits,
+          totalWithdrawals: withdrawals._sum.amount || 0,
+          withdrawalCount: withdrawals._count || 0,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt
+        };
+      })
+    );
+
+    return res.json({
+      success: true,
+      users: usersWithStats,
+      pagination: {
+        page: parseInt(page),
+        limit: take,
+        total,
+        totalPages: Math.ceil(total / take)
+      }
+    });
+  } catch (error) {
+    console.error('Error in getAllUsers:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to get users',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Get single user details
+ * GET /admin/users/:id
+ */
+export const getUserById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        wallet: true,
+        referrer: {
+          select: {
+            telegramId: true,
+            username: true,
+            firstName: true,
+            lastName: true
+          }
+        },
+        referrals: {
+          select: {
+            id: true,
+            telegramId: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            createdAt: true
+          },
+          take: 10,
+          orderBy: { createdAt: 'desc' }
+        },
+        deposits: {
+          take: 10,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            package: {
+              select: {
+                name: true,
+                dailyROI: true
+              }
+            }
+          }
+        },
+        withdrawals: {
+          take: 10,
+          orderBy: { createdAt: 'desc' }
+        }
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Get additional stats
+    const [totalDeposits, totalWithdrawals, activeDeposits] = await Promise.all([
+      prisma.deposit.aggregate({
+        where: { userId: user.id },
+        _sum: { amount: true },
+        _count: true
+      }),
+      prisma.withdrawal.aggregate({
+        where: { userId: user.id },
+        _sum: { amount: true },
+        _count: true
+      }),
+      prisma.deposit.count({
+        where: {
+          userId: user.id,
+          status: 'ACTIVE'
+        }
+      })
+    ]);
+
+    return res.json({
+      success: true,
+      user: {
+        ...user,
+        stats: {
+          totalDeposits: totalDeposits._sum.amount || 0,
+          depositCount: totalDeposits._count || 0,
+          activeDeposits,
+          totalWithdrawals: totalWithdrawals._sum.amount || 0,
+          withdrawalCount: totalWithdrawals._count || 0,
+          referralCount: user.referrals.length
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error in getUserById:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to get user',
+      message: error.message
+    });
+  }
+};
+

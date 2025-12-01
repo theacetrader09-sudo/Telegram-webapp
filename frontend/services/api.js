@@ -475,3 +475,51 @@ export const getROILogsAdmin = async () => {
   }
 };
 
+/**
+ * Get all users (admin)
+ */
+export const getAllUsersAdmin = async (page = 1, limit = 50, search = '') => {
+  try {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...(search && { search })
+    });
+
+    const response = await fetch(`${API_BASE_URL}/admin/users?${params}`, {
+      method: 'GET',
+      headers: getAdminHeaders(),
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Get users error:', error);
+    return {
+      success: false,
+      error: error.message || 'Network error'
+    };
+  }
+};
+
+/**
+ * Get user by ID (admin)
+ */
+export const getUserByIdAdmin = async (userId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
+      method: 'GET',
+      headers: getAdminHeaders(),
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Get user error:', error);
+    return {
+      success: false,
+      error: error.message || 'Network error'
+    };
+  }
+};
+
