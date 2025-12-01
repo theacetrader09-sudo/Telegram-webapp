@@ -212,38 +212,50 @@ export const processDepositROI = async (deposit) => {
     const expectedNewBalance = currentBalance + dailyROI;
 
     // Update user wallet balance using increment (atomic operation)
-    try {
-      const updatedWallet = await tx.wallet.update({
+    const updatedWallet = await tx.wallet.update({
+      where: { userId: user.id },
+      data: {
+        balance: {
+          increment: dailyROI
+        }
+      }
+    });
+
+    console.log(`💰 Wallet updated for user ${user.id}: Old balance = $${currentBalance.toFixed(2)}, Added = $${dailyROI.toFixed(2)}, New balance = $${updatedWallet.balance.toFixed(2)}`);
+
+    // Verify the update worked correctly within transaction
+    if (Math.abs(updatedWallet.balance - expectedNewBalance) > 0.01) {
+      console.error(`⚠️ WALLET BALANCE MISMATCH in transaction for user ${user.id}: Expected $${expectedNewBalance.toFixed(2)}, Got $${updatedWallet.balance.toFixed(2)}`);
+      // Force correct balance within transaction
+      const correctedWallet = await tx.wallet.update({
         where: { userId: user.id },
+        data: { balance: expectedNewBalance }
+      });
+      console.log(`✅ Corrected wallet balance in transaction for user ${user.id}: $${correctedWallet.balance.toFixed(2)}`);
+      
+      // Update deposit lastROIDate
+      await tx.deposit.update({
+        where: { id: deposit.id },
         data: {
-          balance: {
-            increment: dailyROI
-          }
+          lastROIDate: new Date()
         }
       });
 
-      console.log(`💰 Wallet updated for user ${user.id}: Old balance = $${currentBalance.toFixed(2)}, Added = $${dailyROI.toFixed(2)}, New balance = $${updatedWallet.balance.toFixed(2)}`);
+      // Distribute referral commissions
+      const referralAmount = await distributeReferralCommissions(
+        user.id,
+        dailyROI,
+        deposit.id,
+        tx
+      );
 
-      // Verify the update worked correctly within transaction
-      if (Math.abs(updatedWallet.balance - expectedNewBalance) > 0.01) {
-        console.error(`⚠️ WALLET BALANCE MISMATCH in transaction for user ${user.id}: Expected $${expectedNewBalance.toFixed(2)}, Got $${updatedWallet.balance.toFixed(2)}`);
-        // Force correct balance within transaction
-        const correctedWallet = await tx.wallet.update({
-          where: { userId: user.id },
-          data: { balance: expectedNewBalance }
-        });
-        console.log(`✅ Corrected wallet balance in transaction for user ${user.id}: $${correctedWallet.balance.toFixed(2)}`);
-        return {
-          roiAmount: dailyROI,
-          referralAmount: 0, // Will be set after referral distribution
-          newBalance: correctedWallet.balance,
-          oldBalance: currentBalance,
-          updatedWallet: correctedWallet
-        };
-      }
-
-      // Store updated wallet for return
-      const finalWallet = updatedWallet;
+      return {
+        roiAmount: dailyROI,
+        referralAmount,
+        newBalance: correctedWallet.balance,
+        oldBalance: currentBalance
+      };
+    }
 
     // Update deposit lastROIDate
     await tx.deposit.update({
@@ -267,6 +279,9 @@ export const processDepositROI = async (deposit) => {
       newBalance: updatedWallet.balance,
       oldBalance: currentBalance
     };
+  }, {
+    timeout: 30000, // 30 second timeout for transaction
+    isolationLevel: 'ReadCommitted' // Ensure we read committed data
   });
 
   // VERIFY wallet was actually updated in database (outside transaction)
