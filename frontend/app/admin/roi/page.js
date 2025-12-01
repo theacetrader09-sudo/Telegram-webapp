@@ -48,6 +48,28 @@ export default function AdminROI() {
     }
   };
 
+  const handleBackfillROI = async () => {
+    if (!confirm('This will calculate ROI for all previous days for active deposits. This may take a while. Continue?')) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await backfillROIAdmin();
+      if (response.success) {
+        showToast(response.message || 'ROI backfill completed successfully!', 'success');
+        await loadLogs();
+      } else {
+        showToast(response.error || 'Failed to backfill ROI', 'error');
+      }
+    } catch (err) {
+      showToast('Failed to backfill ROI', 'error');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleRunROI = async (forAllUsers = true) => {
     if (!forAllUsers && !userId.trim()) {
       showToast('Please enter a user ID', 'error');
@@ -133,6 +155,23 @@ export default function AdminROI() {
             flexWrap: 'wrap',
             alignItems: 'flex-end'
           }}>
+            <button
+              onClick={handleBackfillROI}
+              disabled={loading}
+              style={{
+                padding: '12px 24px',
+                backgroundColor: loading ? '#9ca3af' : '#f59e0b',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                opacity: loading ? 0.7 : 1
+              }}
+            >
+              {loading ? 'Processing...' : '🔄 Backfill Previous ROI'}
+            </button>
             <button
               onClick={() => handleRunROI(true)}
               disabled={loading}

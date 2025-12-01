@@ -144,24 +144,54 @@ export default function Dashboard() {
   const roiRecords = roiSummary?.roiRecords || [];
 
   return (
-    <div style={{ 
-      minHeight: '100vh',
-      backgroundColor: '#f9fafb',
-      padding: '16px',
-      paddingBottom: '80px',
-      width: '100%',
-      maxWidth: '100%',
-      overflowX: 'hidden'
-    }}>
-      <h1 style={{ 
-        marginTop: '0',
-        marginBottom: '20px',
-        fontSize: 'clamp(24px, 5vw, 28px)',
-        fontWeight: 'bold',
-        color: '#111827'
+      <div style={{ 
+        minHeight: '100vh',
+        backgroundColor: '#f9fafb',
+        padding: '16px',
+        paddingBottom: '80px',
+        width: '100%',
+        maxWidth: '100%',
+        overflowX: 'hidden'
       }}>
-        Dashboard
-      </h1>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '20px',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}>
+          <h1 style={{ 
+            marginTop: '0',
+            marginBottom: '0',
+            fontSize: 'clamp(24px, 5vw, 28px)',
+            fontWeight: 'bold',
+            color: '#111827'
+          }}>
+            Dashboard
+          </h1>
+          <button
+            onClick={handleRefresh}
+            disabled={loading}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: loading ? '#9ca3af' : '#0088cc',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              fontSize: '14px',
+              fontWeight: '500',
+              opacity: loading ? 0.7 : 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <span>{loading ? '🔄' : '🔄'}</span>
+            <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
+          </button>
+        </div>
       
       {/* ROI Countdown Timer */}
       <div style={{ 
