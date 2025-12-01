@@ -81,12 +81,20 @@ model Deposit {
 }
 
 model Withdrawal {
-  id        String   @id @default(uuid())
-  userId    String
-  amount    Float
-  status    String   @default("PENDING")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String    @id @default(uuid())
+  userId         String
+  amount         Float
+  cryptoAddress  String    // User's crypto wallet address
+  network        String?   // BEP20, ERC20, TRC20, etc.
+  status         String    @default("PENDING") // PENDING, APPROVED, COMPLETED, REJECTED
+  transactionHash String?  // Admin adds this after processing payment
+  approvedAt     DateTime?
+  approvedBy     String?   // Admin user ID
+  completedAt    DateTime?
+  rejectedAt     DateTime?
+  rejectionReason String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

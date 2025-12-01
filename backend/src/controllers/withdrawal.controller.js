@@ -29,11 +29,23 @@ export const getWithdrawals = async (req, res) => {
  */
 export const requestWithdrawal = async (req, res) => {
   try {
-    const { amount } = req.body;
+    const { amount, cryptoAddress, network } = req.body;
     const userId = req.user.id;
 
     if (!amount || amount <= 0) {
       return res.status(400).json({ success: false, error: 'Valid amount is required' });
+    }
+
+    if (!cryptoAddress || cryptoAddress.trim() === '') {
+      return res.status(400).json({ success: false, error: 'Crypto address is required' });
+    }
+
+    // Basic address validation (starts with 0x for Ethereum-style addresses)
+    if (cryptoAddress.startsWith('0x') && cryptoAddress.length !== 42) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid crypto address format' 
+      });
     }
 
     // Get user wallet
@@ -60,6 +72,8 @@ export const requestWithdrawal = async (req, res) => {
       data: {
         userId,
         amount,
+        cryptoAddress: cryptoAddress.trim(),
+        network: network || 'BEP20',
         status: 'PENDING'
       }
     });

@@ -155,9 +155,11 @@ export const getWithdrawals = async () => {
 /**
  * Request withdrawal
  * @param {number} amount - Withdrawal amount
+ * @param {string} cryptoAddress - User's crypto wallet address
+ * @param {string} network - Network (BEP20, ERC20, TRC20)
  */
-export const requestWithdrawal = async (amount) => {
-  return post('/api/withdraw', { amount });
+export const requestWithdrawal = async (amount, cryptoAddress, network = 'BEP20') => {
+  return post('/api/withdraw', { amount, cryptoAddress, network });
 };
 
 /**
@@ -165,5 +167,311 @@ export const requestWithdrawal = async (amount) => {
  */
 export const getReferralTree = async () => {
   return get('/api/referral/tree');
+};
+
+// ==================== ADMIN API FUNCTIONS ====================
+
+/**
+ * Get admin headers (separate from user auth)
+ */
+const getAdminHeaders = () => {
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+
+  if (typeof window !== 'undefined') {
+    const adminToken = localStorage.getItem('adminToken');
+    if (adminToken) {
+      headers['Authorization'] = `Bearer ${adminToken}`;
+    }
+  }
+
+  return headers;
+};
+
+/**
+ * Admin login
+ * @param {string} email - Admin email
+ * @param {string} password - Admin password
+ */
+export const adminLogin = async (email, password) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: data.error || 'Login failed'
+      };
+    }
+
+    // Store admin token
+    if (typeof window !== 'undefined' && data.token) {
+      localStorage.setItem('adminToken', data.token);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Admin login error:', error);
+    return {
+      success: false,
+      error: error.message || 'Network error'
+    };
+  }
+};
+
+/**
+ * Verify admin token
+ */
+export const verifyAdmin = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/auth/verify`, {
+      method: 'GET',
+      headers: getAdminHeaders(),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: data.error || 'Verification failed'
+      };
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Verify admin error:', error);
+    return {
+      success: false,
+      error: error.message || 'Network error'
+    };
+  }
+};
+
+/**
+ * Get pending deposits (admin)
+ */
+export const getPendingDepositsAdmin = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/deposits/pending`, {
+      method: 'GET',
+      headers: getAdminHeaders(),
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Get pending deposits error:', error);
+    return {
+      success: false,
+      error: error.message || 'Network error'
+    };
+  }
+};
+
+/**
+ * Approve deposit (admin)
+ */
+export const approveDepositAdmin = async (depositId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/deposits/${depositId}/approve`, {
+      method: 'POST',
+      headers: getAdminHeaders(),
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Approve deposit error:', error);
+    return {
+      success: false,
+      error: error.message || 'Network error'
+    };
+  }
+};
+
+/**
+ * Reject deposit (admin)
+ */
+export const rejectDepositAdmin = async (depositId, reason) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/deposits/${depositId}/reject`, {
+      method: 'POST',
+      headers: getAdminHeaders(),
+      body: JSON.stringify({ reason }),
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Reject deposit error:', error);
+    return {
+      success: false,
+      error: error.message || 'Network error'
+    };
+  }
+};
+
+/**
+ * Get pending withdrawals (admin)
+ */
+export const getPendingWithdrawalsAdmin = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/withdrawals/pending`, {
+      method: 'GET',
+      headers: getAdminHeaders(),
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Get pending withdrawals error:', error);
+    return {
+      success: false,
+      error: error.message || 'Network error'
+    };
+  }
+};
+
+/**
+ * Get all withdrawals (admin)
+ */
+export const getAllWithdrawalsAdmin = async (status) => {
+  try {
+    const url = status 
+      ? `${API_BASE_URL}/admin/withdrawals?status=${status}`
+      : `${API_BASE_URL}/admin/withdrawals`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: getAdminHeaders(),
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Get withdrawals error:', error);
+    return {
+      success: false,
+      error: error.message || 'Network error'
+    };
+  }
+};
+
+/**
+ * Approve withdrawal (admin)
+ */
+export const approveWithdrawalAdmin = async (withdrawalId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/withdrawals/${withdrawalId}/approve`, {
+      method: 'POST',
+      headers: getAdminHeaders(),
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Approve withdrawal error:', error);
+    return {
+      success: false,
+      error: error.message || 'Network error'
+    };
+  }
+};
+
+/**
+ * Reject withdrawal (admin)
+ */
+export const rejectWithdrawalAdmin = async (withdrawalId, reason) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/withdrawals/${withdrawalId}/reject`, {
+      method: 'POST',
+      headers: getAdminHeaders(),
+      body: JSON.stringify({ reason }),
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Reject withdrawal error:', error);
+    return {
+      success: false,
+      error: error.message || 'Network error'
+    };
+  }
+};
+
+/**
+ * Complete withdrawal (admin) - add transaction hash
+ */
+export const completeWithdrawalAdmin = async (withdrawalId, transactionHash) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/withdrawals/${withdrawalId}/complete`, {
+      method: 'POST',
+      headers: getAdminHeaders(),
+      body: JSON.stringify({ transactionHash }),
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Complete withdrawal error:', error);
+    return {
+      success: false,
+      error: error.message || 'Network error'
+    };
+  }
+};
+
+/**
+ * Run ROI manually (admin)
+ */
+export const runROIAdmin = async (userId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/run-roi`, {
+      method: 'POST',
+      headers: getAdminHeaders(),
+      body: JSON.stringify(userId ? { userId } : {}),
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Run ROI error:', error);
+    return {
+      success: false,
+      error: error.message || 'Network error'
+    };
+  }
+};
+
+/**
+ * Get ROI logs (admin)
+ */
+export const getROILogsAdmin = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/roi-logs`, {
+      method: 'GET',
+      headers: getAdminHeaders(),
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Get ROI logs error:', error);
+    return {
+      success: false,
+      error: error.message || 'Network error'
+    };
+  }
 };
 

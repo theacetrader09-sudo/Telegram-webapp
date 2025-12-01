@@ -5,11 +5,13 @@ import { useState } from 'react';
 interface WithdrawModalProps {
   balance: number;
   onClose: () => void;
-  onWithdraw: (amount: number) => Promise<void>;
+  onWithdraw: (amount: number, cryptoAddress: string, network: string) => Promise<void>;
 }
 
 export default function WithdrawModal({ balance, onClose, onWithdraw }: WithdrawModalProps) {
   const [amount, setAmount] = useState('');
+  const [cryptoAddress, setCryptoAddress] = useState('');
+  const [network, setNetwork] = useState('BEP20');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -34,9 +36,20 @@ export default function WithdrawModal({ balance, onClose, onWithdraw }: Withdraw
       return;
     }
 
+    if (!cryptoAddress || cryptoAddress.trim() === '') {
+      setError('Please enter your crypto wallet address');
+      return;
+    }
+
+    // Basic validation for Ethereum-style addresses (0x...)
+    if (cryptoAddress.startsWith('0x') && cryptoAddress.length !== 42) {
+      setError('Invalid crypto address format. Please check your address.');
+      return;
+    }
+
     setLoading(true);
     try {
-      await onWithdraw(withdrawAmount);
+      await onWithdraw(withdrawAmount, cryptoAddress.trim(), network);
       onClose();
     } catch (err: any) {
       setError(err.message || 'Failed to request withdrawal');
@@ -111,6 +124,55 @@ export default function WithdrawModal({ balance, onClose, onWithdraw }: Withdraw
               }}
               required
             />
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+              Network
+            </label>
+            <select
+              value={network}
+              onChange={(e) => setNetwork(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '16px',
+                boxSizing: 'border-box',
+                backgroundColor: 'white'
+              }}
+              required
+            >
+              <option value="BEP20">BEP20 (Binance Smart Chain)</option>
+              <option value="ERC20">ERC20 (Ethereum)</option>
+              <option value="TRC20">TRC20 (Tron)</option>
+            </select>
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+              Crypto Wallet Address
+            </label>
+            <input
+              type="text"
+              value={cryptoAddress}
+              onChange={(e) => setCryptoAddress(e.target.value)}
+              placeholder="Enter your crypto wallet address"
+              style={{
+                width: '100%',
+                padding: '10px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '16px',
+                boxSizing: 'border-box',
+                fontFamily: 'monospace'
+              }}
+              required
+            />
+            <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#6b7280' }}>
+              Make sure to use the correct network address. Funds sent to the wrong network will be lost.
+            </p>
           </div>
 
           {error && (

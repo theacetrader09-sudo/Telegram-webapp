@@ -3,6 +3,7 @@ import cors from 'cors';
 import authRoutes from './routes/auth.routes.js';
 import botRoutes from './routes/bot.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+import adminAuthRoutes from './routes/adminAuth.routes.js';
 import userRoutes from './routes/user.routes.js';
 import packageRoutes from './routes/package.routes.js';
 import depositRoutes from './routes/deposit.routes.js';
@@ -19,6 +20,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/auth', authRoutes);
 app.use('/bot', botRoutes);
+app.use('/admin/auth', adminAuthRoutes);
 app.use('/admin', adminRoutes);
 
 // API Routes

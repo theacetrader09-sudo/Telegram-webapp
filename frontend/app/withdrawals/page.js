@@ -54,9 +54,9 @@ export default function Withdrawals() {
     }
   };
 
-  const handleWithdraw = async (amount) => {
+  const handleWithdraw = async (amount, cryptoAddress, network) => {
     try {
-      const response = await requestWithdrawal(amount);
+      const response = await requestWithdrawal(amount, cryptoAddress, network);
       if (response.success) {
         showToast('Withdrawal request submitted successfully!', 'success');
         setShowModal(false);

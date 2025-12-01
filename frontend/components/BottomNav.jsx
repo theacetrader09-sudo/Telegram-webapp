@@ -6,12 +6,18 @@ import Link from 'next/link';
 export default function BottomNav() {
   const pathname = usePathname();
 
+  // Don't show bottom nav on admin pages
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
+
   const menuItems = [
     { path: '/dashboard', label: 'Dashboard', icon: '📊' },
     { path: '/packages', label: 'Packages', icon: '💼' },
     { path: '/deposit', label: 'Deposit', icon: '💳' },
     { path: '/roi', label: 'ROI', icon: '💰' },
     { path: '/withdrawals', label: 'Withdraw', icon: '💸' },
+    { path: '/referrals', label: 'Referrals', icon: '👥' },
   ];
 
   return (
@@ -24,13 +30,17 @@ export default function BottomNav() {
         backgroundColor: '#ffffff',
         borderTop: '1px solid #e5e7eb',
         display: 'flex',
-        justifyContent: 'space-around',
         alignItems: 'center',
         padding: '8px 0 calc(8px + env(safe-area-inset-bottom))',
         zIndex: 1000,
         boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.1)',
         minHeight: '60px',
-        maxHeight: '60px'
+        maxHeight: '60px',
+        overflowX: 'auto',
+        overflowY: 'hidden',
+        WebkitOverflowScrolling: 'touch',
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none'
       }}>
         {menuItems.map((item) => {
           const isActive = pathname === item.path;
@@ -45,14 +55,13 @@ export default function BottomNav() {
                 justifyContent: 'center',
                 textDecoration: 'none',
                 color: isActive ? '#0088cc' : '#6b7280',
-                padding: '4px 8px',
+                padding: '4px 12px',
                 borderRadius: '8px',
-                minWidth: '50px',
-                flex: 1,
+                minWidth: '60px',
+                flexShrink: 0,
                 transition: 'all 0.2s',
                 fontSize: '10px',
-                fontWeight: isActive ? '600' : '400',
-                maxWidth: '80px'
+                fontWeight: isActive ? '600' : '400'
               }}
             >
               <span style={{ 
@@ -77,6 +86,9 @@ export default function BottomNav() {
       <style jsx>{`
         nav {
           -webkit-tap-highlight-color: transparent;
+        }
+        nav::-webkit-scrollbar {
+          display: none;
         }
         @media (max-width: 480px) {
           nav {

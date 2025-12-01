@@ -373,3 +373,365 @@ export const rejectDeposit = async (req, res) => {
   }
 };
 
+/**
+ * Get all pending withdrawals
+ * GET /admin/withdrawals/pending
+ */
+export const getPendingWithdrawals = async (req, res) => {
+  try {
+    const withdrawals = await prisma.withdrawal.findMany({
+      where: { status: 'PENDING' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            telegramId: true,
+            username: true,
+            firstName: true,
+            lastName: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return res.json({
+      success: true,
+      withdrawals
+    });
+  } catch (error) {
+    console.error('Error in getPendingWithdrawals:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to get pending withdrawals'
+    });
+  }
+};
+
+/**
+ * Get all withdrawals
+ * GET /admin/withdrawals
+ */
+export const getAllWithdrawals = async (req, res) => {
+  try {
+    const { status } = req.query;
+    const where = status ? { status } : {};
+
+    const withdrawals = await prisma.withdrawal.findMany({
+      where,
+      include: {
+        user: {
+          select: {
+            id: true,
+            telegramId: true,
+            username: true,
+            firstName: true,
+            lastName: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return res.json({
+      success: true,
+      withdrawals
+    });
+  } catch (error) {
+    console.error('Error in getAllWithdrawals:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to get withdrawals'
+    });
+  }
+};
+
+/**
+ * Approve a withdrawal
+ * POST /admin/withdrawals/:id/approve
+ */
+export const approveWithdrawal = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const adminId = req.admin?.id || 'system';
+
+    const withdrawal = await prisma.withdrawal.findUnique({
+      where: { id },
+      include: {
+        user: {
+          include: {
+            wallet: true
+          }
+        }
+      }
+    });
+
+    if (!withdrawal) {
+      return res.status(404).json({
+        success: false,
+        error: 'Withdrawal not found'
+      });
+    }
+
+    if (withdrawal.status !== 'PENDING') {
+      return res.status(400).json({
+        success: false,
+        error: `Withdrawal is already ${withdrawal.status}`
+      });
+    }
+
+    // Ensure wallet exists
+    let wallet = withdrawal.user.wallet;
+    if (!wallet) {
+      wallet = await prisma.wallet.create({
+        data: { userId: withdrawal.userId }
+      });
+    }
+
+    // Check balance
+    if (wallet.balance < withdrawal.amount) {
+      return res.status(400).json({
+        success: false,
+        error: 'User has insufficient balance'
+      });
+    }
+
+    // Approve withdrawal and deduct from wallet
+    const result = await prisma.$transaction(async (tx) => {
+      // Update wallet balance
+      await tx.wallet.update({
+        where: { userId: withdrawal.userId },
+        data: {
+          balance: {
+            decrement: withdrawal.amount
+          }
+        }
+      });
+
+      // Update withdrawal status
+      const updatedWithdrawal = await tx.withdrawal.update({
+        where: { id },
+        data: {
+          status: 'APPROVED',
+          approvedAt: new Date(),
+          approvedBy: adminId
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              telegramId: true,
+              username: true
+            }
+          }
+        }
+      });
+
+      return { withdrawal: updatedWithdrawal, newBalance: wallet.balance - withdrawal.amount };
+    });
+
+    // Log admin action
+    await logAdminAction({
+      adminId,
+      action: 'APPROVE_WITHDRAWAL',
+      userId: withdrawal.userId,
+      amount: withdrawal.amount,
+      status: 'SUCCESS',
+      details: {
+        withdrawalId: id,
+        cryptoAddress: withdrawal.cryptoAddress,
+        network: withdrawal.network,
+        newBalance: result.newBalance
+      }
+    });
+
+    return res.json({
+      success: true,
+      withdrawal: result.withdrawal,
+      newBalance: result.newBalance,
+      message: 'Withdrawal approved successfully'
+    });
+  } catch (error) {
+    console.error('Error in approveWithdrawal:', error);
+    
+    await logAdminAction({
+      adminId: req.admin?.id || 'system',
+      action: 'APPROVE_WITHDRAWAL',
+      withdrawalId: req.params?.id,
+      status: 'FAILED',
+      error: error.message
+    });
+
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to approve withdrawal'
+    });
+  }
+};
+
+/**
+ * Reject a withdrawal
+ * POST /admin/withdrawals/:id/reject
+ */
+export const rejectWithdrawal = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const adminId = req.admin?.id || 'system';
+
+    const withdrawal = await prisma.withdrawal.findUnique({
+      where: { id }
+    });
+
+    if (!withdrawal) {
+      return res.status(404).json({
+        success: false,
+        error: 'Withdrawal not found'
+      });
+    }
+
+    if (withdrawal.status !== 'PENDING') {
+      return res.status(400).json({
+        success: false,
+        error: `Withdrawal is already ${withdrawal.status}`
+      });
+    }
+
+    // Update withdrawal status
+    const updatedWithdrawal = await prisma.withdrawal.update({
+      where: { id },
+      data: {
+        status: 'REJECTED',
+        rejectedAt: new Date(),
+        approvedBy: adminId,
+        rejectionReason: reason || null
+      }
+    });
+
+    // Log admin action
+    await logAdminAction({
+      adminId,
+      action: 'REJECT_WITHDRAWAL',
+      userId: withdrawal.userId,
+      withdrawalId: id,
+      amount: withdrawal.amount,
+      status: 'SUCCESS',
+      details: {
+        reason: reason || 'No reason provided'
+      }
+    });
+
+    return res.json({
+      success: true,
+      withdrawal: updatedWithdrawal,
+      message: 'Withdrawal rejected'
+    });
+  } catch (error) {
+    console.error('Error in rejectWithdrawal:', error);
+    
+    await logAdminAction({
+      adminId: req.admin?.id || 'system',
+      action: 'REJECT_WITHDRAWAL',
+      withdrawalId: req.params?.id,
+      status: 'FAILED',
+      error: error.message
+    });
+
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to reject withdrawal'
+    });
+  }
+};
+
+/**
+ * Complete a withdrawal (add transaction hash)
+ * POST /admin/withdrawals/:id/complete
+ */
+export const completeWithdrawal = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { transactionHash } = req.body;
+    const adminId = req.admin?.id || 'system';
+
+    if (!transactionHash) {
+      return res.status(400).json({
+        success: false,
+        error: 'Transaction hash is required'
+      });
+    }
+
+    const withdrawal = await prisma.withdrawal.findUnique({
+      where: { id }
+    });
+
+    if (!withdrawal) {
+      return res.status(404).json({
+        success: false,
+        error: 'Withdrawal not found'
+      });
+    }
+
+    if (withdrawal.status !== 'APPROVED') {
+      return res.status(400).json({
+        success: false,
+        error: `Withdrawal must be APPROVED before completion. Current status: ${withdrawal.status}`
+      });
+    }
+
+    // Update withdrawal status
+    const updatedWithdrawal = await prisma.withdrawal.update({
+      where: { id },
+      data: {
+        status: 'COMPLETED',
+        transactionHash: transactionHash.trim(),
+        completedAt: new Date()
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            telegramId: true,
+            username: true
+          }
+        }
+      }
+    });
+
+    // Log admin action
+    await logAdminAction({
+      adminId,
+      action: 'COMPLETE_WITHDRAWAL',
+      userId: withdrawal.userId,
+      withdrawalId: id,
+      amount: withdrawal.amount,
+      status: 'SUCCESS',
+      details: {
+        transactionHash,
+        cryptoAddress: withdrawal.cryptoAddress
+      }
+    });
+
+    return res.json({
+      success: true,
+      withdrawal: updatedWithdrawal,
+      message: 'Withdrawal marked as completed'
+    });
+  } catch (error) {
+    console.error('Error in completeWithdrawal:', error);
+    
+    await logAdminAction({
+      adminId: req.admin?.id || 'system',
+      action: 'COMPLETE_WITHDRAWAL',
+      withdrawalId: req.params?.id,
+      status: 'FAILED',
+      error: error.message
+    });
+
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to complete withdrawal'
+    });
+  }
+};
+
