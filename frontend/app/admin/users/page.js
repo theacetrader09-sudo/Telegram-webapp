@@ -275,6 +275,7 @@ export default function AdminUsers() {
                   <thead>
                     <tr style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
                       <th style={{ padding: '12px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6b7280' }}>User</th>
+                      <th style={{ padding: '12px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6b7280' }}>User ID</th>
                       <th style={{ padding: '12px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6b7280' }}>Telegram ID</th>
                       <th style={{ padding: '12px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6b7280' }}>Wallet</th>
                       <th style={{ padding: '12px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6b7280' }}>Deposits</th>
@@ -295,6 +296,32 @@ export default function AdminUsers() {
                             <div style={{ fontSize: '12px', color: '#6b7280' }}>
                               @{user.username || 'no-username'}
                             </div>
+                          </div>
+                        </td>
+                        <td style={{ padding: '12px', fontSize: '12px', fontFamily: 'monospace', color: '#6b7280' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '11px' }}>{user.id}</span>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(user.id);
+                                showToast('User ID copied!', 'success');
+                              }}
+                              style={{
+                                padding: '2px 6px',
+                                backgroundColor: '#f3f4f6',
+                                border: '1px solid #d1d5db',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '10px',
+                                color: '#6b7280',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                              title="Copy User ID"
+                            >
+                              📋
+                            </button>
                           </div>
                         </td>
                         <td style={{ padding: '12px', fontSize: '12px', fontFamily: 'monospace', color: '#6b7280' }}>
@@ -509,6 +536,35 @@ export default function AdminUsers() {
                     <div>
                       <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Username</div>
                       <div style={{ fontWeight: '500' }}>@{userDetail.username || 'no-username'}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>User ID (Database)</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <div style={{ fontFamily: 'monospace', fontSize: '12px', color: '#111827', fontWeight: '500' }}>
+                          {userDetail.id}
+                        </div>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(userDetail.id);
+                            showToast('User ID copied to clipboard!', 'success');
+                          }}
+                          style={{
+                            padding: '4px 8px',
+                            backgroundColor: '#3b82f6',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '11px',
+                            fontWeight: '500'
+                          }}
+                        >
+                          Copy ID
+                        </button>
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px' }}>
+                        Use this ID when assigning referrers
+                      </div>
                     </div>
                     <div>
                       <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Telegram ID</div>
