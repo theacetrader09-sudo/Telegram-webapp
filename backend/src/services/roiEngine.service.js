@@ -212,16 +212,35 @@ export const processDepositROI = async (deposit) => {
     const expectedNewBalance = currentBalance + dailyROI;
 
     // Update user wallet balance using increment (atomic operation)
+    console.log(`🔄 Attempting to update wallet for user ${user.id}: Current = $${currentBalance.toFixed(2)}, Adding = $${dailyROI.toFixed(2)}`);
+    
     const updatedWallet = await tx.wallet.update({
       where: { userId: user.id },
       data: {
         balance: {
           increment: dailyROI
         }
+      },
+      select: {
+        id: true,
+        userId: true,
+        balance: true,
+        updatedAt: true
       }
     });
 
-    console.log(`💰 Wallet updated for user ${user.id}: Old balance = $${currentBalance.toFixed(2)}, Added = $${dailyROI.toFixed(2)}, New balance = $${updatedWallet.balance.toFixed(2)}`);
+    console.log(`💰 Wallet UPDATE RESULT for user ${user.id}:`);
+    console.log(`   - Old balance: $${currentBalance.toFixed(2)}`);
+    console.log(`   - Added: $${dailyROI.toFixed(2)}`);
+    console.log(`   - New balance: $${updatedWallet.balance.toFixed(2)}`);
+    console.log(`   - Updated at: ${updatedWallet.updatedAt}`);
+    
+    // Immediately verify within transaction
+    const verifyInTx = await tx.wallet.findUnique({
+      where: { userId: user.id },
+      select: { balance: true }
+    });
+    console.log(`   - Verified in transaction: $${verifyInTx.balance.toFixed(2)}`);
 
     // Verify the update worked correctly within transaction
     if (Math.abs(updatedWallet.balance - expectedNewBalance) > 0.01) {
