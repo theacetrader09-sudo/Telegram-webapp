@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DepositModal from '../../components/DepositModal';
+import CelebrationAnimation from '../../components/CelebrationAnimation';
 import { getPackages, deposit } from '../../services/api';
 import { showToast } from '../../components/Toast';
 
@@ -12,6 +13,7 @@ export default function Packages() {
   const [loading, setLoading] = useState(true);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [error, setError] = useState('');
+  const [showCelebration, setShowCelebration] = useState(false);
 
   useEffect(() => {
     const checkAuth = () => {
@@ -48,15 +50,25 @@ export default function Packages() {
     try {
       const response = await deposit(packageId, amount);
       if (response.success) {
-        showToast('Deposit created successfully!', 'success');
         setSelectedPackage(null);
+        setShowCelebration(true);
         loadPackages();
       } else {
-        showToast(response.error || 'Failed to create deposit', 'error');
-        throw new Error(response.error || 'Failed to create deposit');
+        // Check if insufficient balance
+        if (response.insufficientBalance) {
+          showToast('Insufficient balance. Redirecting to deposit page...', 'warning');
+          setTimeout(() => {
+            router.push('/deposit');
+          }, 2000);
+        } else {
+          showToast(response.error || 'Failed to activate package', 'error');
+        }
+        throw new Error(response.error || 'Failed to activate package');
       }
     } catch (err) {
-      showToast(err.message || 'Failed to create deposit', 'error');
+      if (!err.message.includes('Insufficient')) {
+        showToast(err.message || 'Failed to activate package', 'error');
+      }
     }
   };
 
@@ -273,6 +285,14 @@ export default function Packages() {
           package={selectedPackage}
           onClose={() => setSelectedPackage(null)}
           onDeposit={handleDeposit}
+          onSuccess={() => setShowCelebration(true)}
+        />
+      )}
+
+      {showCelebration && (
+        <CelebrationAnimation
+          onClose={() => setShowCelebration(false)}
+          message="Congratulations! Your package is activated!"
         />
       )}
     </div>

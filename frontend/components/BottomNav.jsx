@@ -9,9 +9,9 @@ export default function BottomNav() {
   const menuItems = [
     { path: '/dashboard', label: 'Dashboard', icon: '📊' },
     { path: '/packages', label: 'Packages', icon: '💼' },
+    { path: '/deposit', label: 'Deposit', icon: '💳' },
     { path: '/roi', label: 'ROI', icon: '💰' },
     { path: '/withdrawals', label: 'Withdraw', icon: '💸' },
-    { path: '/referrals', label: 'Referrals', icon: '👥' },
   ];
 
   return (

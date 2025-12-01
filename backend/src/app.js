@@ -25,6 +25,7 @@ app.use('/admin', adminRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/packages', packageRoutes);
 app.use('/api/deposit', depositRoutes);
+app.use('/api/deposits', depositRoutes); // Alias for consistency
 app.use('/api/withdrawals', withdrawalRoutes);
 app.use('/api/withdraw', withdrawalRoutes);
 app.use('/api/referral', referralRoutes);

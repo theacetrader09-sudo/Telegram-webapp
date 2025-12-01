@@ -106,7 +106,31 @@ export const getPackages = async () => {
 };
 
 /**
- * Create a deposit
+ * Create a deposit request (for crypto deposit)
+ * @param {number} amount - Deposit amount
+ * @param {string} depositAddress - Transaction hash (optional)
+ * @param {string} transactionProof - Proof URL (optional)
+ */
+export const createDepositRequest = async (amount, depositAddress, transactionProof) => {
+  return post('/api/deposit/request', { amount, depositAddress, transactionProof });
+};
+
+/**
+ * Get pending deposits
+ */
+export const getPendingDeposits = async () => {
+  return get('/api/deposit/pending');
+};
+
+/**
+ * Get all user deposits
+ */
+export const getUserDeposits = async () => {
+  return get('/api/deposit/user');
+};
+
+/**
+ * Create a deposit and activate package (uses wallet balance)
  * @param {string} packageId - Package ID
  * @param {number} amount - Deposit amount
  */

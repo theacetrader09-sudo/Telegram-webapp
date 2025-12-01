@@ -1,16 +1,23 @@
 import express from 'express';
-import { runROI, sendROI, getROILogsHandler } from '../controllers/admin.controller.js';
-// import { adminAuth } from '../middleware/adminAuth.middleware.js'; // Uncomment when implemented
+import { 
+  runROI, 
+  sendROI, 
+  getROILogsHandler,
+  getPendingDeposits,
+  approveDeposit,
+  rejectDeposit
+} from '../controllers/admin.controller.js';
 
 const router = express.Router();
-
-// Apply admin auth middleware to all routes
-// router.use(adminAuth); // Uncomment when implemented
 
 // ROI management endpoints
 router.post('/run-roi', runROI);
 router.post('/send-roi', sendROI);
 router.get('/roi-logs', getROILogsHandler);
 
-export default router;
+// Deposit management
+router.get('/deposits/pending', getPendingDeposits);
+router.post('/deposits/:id/approve', approveDeposit);
+router.post('/deposits/:id/reject', rejectDeposit);
 
+export default router;
