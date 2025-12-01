@@ -176,6 +176,10 @@ export const processDepositROI = async (deposit) => {
     
     console.log(`✅ Created ROI record for user ${user.id}: $${dailyROI.toFixed(2)} at ${roiRecord.createdAt.toISOString()}`);
 
+    // Get current wallet balance before update
+    const currentBalance = wallet.balance || 0;
+    const expectedNewBalance = currentBalance + dailyROI;
+
     // Update user wallet balance
     const updatedWallet = await tx.wallet.update({
       where: { userId: user.id },
@@ -186,7 +190,18 @@ export const processDepositROI = async (deposit) => {
       }
     });
 
-    console.log(`💰 Wallet updated for user ${user.id}: New balance = $${updatedWallet.balance.toFixed(2)} (added $${dailyROI.toFixed(2)})`);
+    console.log(`💰 Wallet updated for user ${user.id}: Old balance = $${currentBalance.toFixed(2)}, Added = $${dailyROI.toFixed(2)}, New balance = $${updatedWallet.balance.toFixed(2)}`);
+
+    // Verify the update worked correctly
+    if (Math.abs(updatedWallet.balance - expectedNewBalance) > 0.01) {
+      console.error(`⚠️ WALLET BALANCE MISMATCH for user ${user.id}: Expected $${expectedNewBalance.toFixed(2)}, Got $${updatedWallet.balance.toFixed(2)}`);
+      // Force correct balance
+      const correctedWallet = await tx.wallet.update({
+        where: { userId: user.id },
+        data: { balance: expectedNewBalance }
+      });
+      console.log(`✅ Corrected wallet balance for user ${user.id}: $${correctedWallet.balance.toFixed(2)}`);
+    }
 
     // Update deposit lastROIDate
     await tx.deposit.update({
@@ -207,9 +222,44 @@ export const processDepositROI = async (deposit) => {
     return {
       roiAmount: dailyROI,
       referralAmount,
-      newBalance: wallet.balance + dailyROI
+      newBalance: updatedWallet.balance,
+      oldBalance: currentBalance
     };
   });
+
+  // VERIFY wallet was actually updated in database (outside transaction)
+  try {
+    const verifiedWallet = await prisma.wallet.findUnique({
+      where: { userId: user.id }
+    });
+
+    if (verifiedWallet) {
+      const balanceDiff = Math.abs(verifiedWallet.balance - result.newBalance);
+      if (balanceDiff > 0.01) {
+        console.error(`⚠️ POST-TRANSACTION WALLET MISMATCH for user ${user.id}: Transaction said $${result.newBalance.toFixed(2)}, Database has $${verifiedWallet.balance.toFixed(2)}`);
+        // Force update to correct value
+        await prisma.wallet.update({
+          where: { userId: user.id },
+          data: { balance: result.newBalance }
+        });
+        console.log(`✅ Fixed wallet balance in database for user ${user.id}: $${result.newBalance.toFixed(2)}`);
+      } else {
+        console.log(`✅ Verified wallet balance for user ${user.id}: $${verifiedWallet.balance.toFixed(2)}`);
+      }
+    } else {
+      console.error(`❌ Wallet not found for user ${user.id} after ROI calculation!`);
+      // Create wallet if it doesn't exist
+      const newWallet = await prisma.wallet.create({
+        data: {
+          userId: user.id,
+          balance: result.newBalance
+        }
+      });
+      console.log(`✅ Created missing wallet for user ${user.id}: $${newWallet.balance.toFixed(2)}`);
+    }
+  } catch (verifyError) {
+    console.error(`❌ Error verifying wallet for user ${user.id}:`, verifyError);
+  }
 
   // Send notification (non-blocking)
   notifyROICredited(user.id, result.roiAmount, result.newBalance).catch(err => {

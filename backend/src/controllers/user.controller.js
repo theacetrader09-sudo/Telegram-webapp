@@ -28,12 +28,20 @@ export const getCurrentUser = async (req, res) => {
     }
 
     // Ensure wallet exists
-    if (!user.wallet) {
-      const wallet = await prisma.wallet.create({
-        data: { userId: user.id }
+    let wallet = user.wallet;
+    if (!wallet) {
+      wallet = await prisma.wallet.create({
+        data: { userId: user.id, balance: 0 }
       });
-      user.wallet = wallet;
+      console.log(`✅ Created wallet for user ${user.id}`);
     }
+
+    // Re-fetch wallet to ensure we have the latest balance (avoid stale data)
+    const freshWallet = await prisma.wallet.findUnique({
+      where: { userId: user.id }
+    });
+
+    console.log(`📊 Fetching user ${user.id} wallet balance: $${freshWallet?.balance.toFixed(2) || 0}`);
 
     return res.json({
       success: true,
@@ -47,7 +55,7 @@ export const getCurrentUser = async (req, res) => {
         referralChain: user.referralChain,
         createdAt: user.createdAt
       },
-      wallet: user.wallet
+      wallet: freshWallet || wallet
     });
   } catch (error) {
     console.error('Get user error:', error);
