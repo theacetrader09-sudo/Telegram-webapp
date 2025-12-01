@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Sidebar from '../../components/Sidebar';
-import MobileSidebar from '../../components/MobileSidebar';
 import { getROI } from '../../services/api';
 import { showToast } from '../../components/Toast';
 
@@ -51,7 +49,8 @@ export default function ROI() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#f9fafb'
+        backgroundColor: '#f9fafb',
+        padding: '20px'
       }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{
@@ -96,212 +95,180 @@ export default function ROI() {
     <div style={{ 
       minHeight: '100vh',
       backgroundColor: '#f9fafb',
-      display: 'flex'
+      padding: '16px',
+      paddingBottom: '80px',
+      width: '100%',
+      maxWidth: '100%',
+      overflowX: 'hidden'
     }}>
-      <div style={{ display: 'none' }}>
-        <Sidebar />
-      </div>
-      <div style={{ display: 'block' }}>
-        <MobileSidebar />
-      </div>
-      
-      <div style={{ 
-        flex: 1,
-        marginLeft: 0,
-        padding: '20px',
-        width: '100%',
-        maxWidth: '100%'
+      <h1 style={{ 
+        marginTop: '0',
+        marginBottom: '20px',
+        fontSize: 'clamp(24px, 5vw, 28px)',
+        fontWeight: 'bold',
+        color: '#111827'
       }}>
-        <h1 style={{ 
-          marginTop: '60px',
-          marginBottom: '24px',
-          fontSize: '28px',
-          fontWeight: 'bold',
-          color: '#111827'
-        }}>
-          ROI Earnings
-        </h1>
+        ROI Earnings
+      </h1>
 
-        {error && (
-          <div style={{
-            padding: '16px',
-            backgroundColor: '#fee2e2',
-            color: '#dc2626',
-            borderRadius: '12px',
-            marginBottom: '24px',
-            border: '1px solid #fecaca'
-          }}>
-            {error}
-          </div>
-        )}
-
-        {/* ROI Summary Cards */}
+      {error && (
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-          gap: '16px',
-          marginBottom: '24px'
+          padding: '12px',
+          backgroundColor: '#fee2e2',
+          color: '#dc2626',
+          borderRadius: '12px',
+          marginBottom: '20px',
+          border: '1px solid #fecaca',
+          fontSize: 'clamp(12px, 3vw, 14px)'
         }}>
-          <div style={{
-            padding: '20px',
-            background: 'white',
-            borderRadius: '12px',
-            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-            border: '1px solid #e5e7eb'
-          }}>
-            <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px', fontWeight: '500' }}>
-              Total ROI
-            </div>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#166534' }}>
-              ${totalROI.toFixed(2)}
-            </div>
-          </div>
-
-          <div style={{
-            padding: '20px',
-            background: 'white',
-            borderRadius: '12px',
-            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-            border: '1px solid #e5e7eb'
-          }}>
-            <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px', fontWeight: '500' }}>
-              Today's ROI
-            </div>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#1e40af' }}>
-              ${todayROI.toFixed(2)}
-            </div>
-          </div>
-
-          <div style={{
-            padding: '20px',
-            background: 'white',
-            borderRadius: '12px',
-            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-            border: '1px solid #e5e7eb'
-          }}>
-            <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px', fontWeight: '500' }}>
-              This Month
-            </div>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#92400e' }}>
-              ${thisMonthROI.toFixed(2)}
-            </div>
-          </div>
-
-          <div style={{
-            padding: '20px',
-            background: 'white',
-            borderRadius: '12px',
-            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-            border: '1px solid #e5e7eb'
-          }}>
-            <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px', fontWeight: '500' }}>
-              Referral Income
-            </div>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#9f1239' }}>
-              ${totalReferrals.toFixed(2)}
-            </div>
-          </div>
+          {error}
         </div>
+      )}
 
-        {/* ROI Records */}
-        <div style={{ 
-          marginTop: '24px',
+      {/* ROI Summary Cards */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(140px, 100%), 1fr))',
+        gap: '12px',
+        marginBottom: '20px',
+        width: '100%'
+      }}>
+        <div style={{
+          padding: '16px',
           background: 'white',
-          borderRadius: '16px',
+          borderRadius: '12px',
           boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
           border: '1px solid #e5e7eb',
-          overflow: 'hidden'
+          width: '100%'
         }}>
-          <div style={{ padding: '20px', borderBottom: '1px solid #e5e7eb' }}>
-            <h2 style={{ 
-              margin: 0,
-              fontSize: '20px',
-              fontWeight: '600',
-              color: '#111827'
-            }}>
-              ROI History
-            </h2>
+          <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '6px', fontWeight: '500' }}>
+            Total ROI
           </div>
-          
-          {records.length > 0 ? (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ backgroundColor: '#f9fafb' }}>
-                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase' }}>Date</th>
-                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase' }}>Amount</th>
-                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase' }}>Type</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {records.map((record, index) => (
-                    <tr key={record.id || index} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                      <td style={{ padding: '12px 16px', fontSize: '14px', color: '#6b7280' }}>
-                        {new Date(record.createdAt).toLocaleDateString('en-US', { 
-                          year: 'numeric', 
-                          month: 'short', 
-                          day: 'numeric' 
-                        })}
-                      </td>
-                      <td style={{ padding: '12px 16px', fontWeight: '600', color: '#10b981', fontSize: '16px' }}>
-                        ${record.amount.toFixed(2)}
-                      </td>
-                      <td style={{ padding: '12px 16px' }}>
-                        <span style={{
-                          padding: '6px 12px',
-                          borderRadius: '12px',
-                          fontSize: '12px',
-                          fontWeight: '500',
-                          backgroundColor: record.type === 'SELF' ? '#dbeafe' : '#fef3c7',
-                          color: record.type === 'SELF' ? '#1e40af' : '#92400e'
-                        }}>
-                          {record.type === 'SELF' ? 'Own ROI' : record.type.replace('REFERRAL_LEVEL_', 'Level ')}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div style={{ 
-              textAlign: 'center', 
-              padding: '60px 20px', 
-              color: '#6b7280'
-            }}>
-              <p style={{ fontSize: '16px', margin: 0 }}>No ROI records yet. Start investing to earn daily ROI!</p>
-            </div>
-          )}
+          <div style={{ fontSize: 'clamp(18px, 5vw, 24px)', fontWeight: 'bold', color: '#166534', wordBreak: 'break-word' }}>
+            ${totalROI.toFixed(2)}
+          </div>
+        </div>
+
+        <div style={{
+          padding: '16px',
+          background: 'white',
+          borderRadius: '12px',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+          border: '1px solid #e5e7eb',
+          width: '100%'
+        }}>
+          <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '6px', fontWeight: '500' }}>
+            Today's ROI
+          </div>
+          <div style={{ fontSize: 'clamp(18px, 5vw, 24px)', fontWeight: 'bold', color: '#1e40af', wordBreak: 'break-word' }}>
+            ${todayROI.toFixed(2)}
+          </div>
+        </div>
+
+        <div style={{
+          padding: '16px',
+          background: 'white',
+          borderRadius: '12px',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+          border: '1px solid #e5e7eb',
+          width: '100%'
+        }}>
+          <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '6px', fontWeight: '500' }}>
+            This Month
+          </div>
+          <div style={{ fontSize: 'clamp(18px, 5vw, 24px)', fontWeight: 'bold', color: '#92400e', wordBreak: 'break-word' }}>
+            ${thisMonthROI.toFixed(2)}
+          </div>
+        </div>
+
+        <div style={{
+          padding: '16px',
+          background: 'white',
+          borderRadius: '12px',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+          border: '1px solid #e5e7eb',
+          width: '100%'
+        }}>
+          <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '6px', fontWeight: '500' }}>
+            Referral Income
+          </div>
+          <div style={{ fontSize: 'clamp(18px, 5vw, 24px)', fontWeight: 'bold', color: '#9f1239', wordBreak: 'break-word' }}>
+            ${totalReferrals.toFixed(2)}
+          </div>
         </div>
       </div>
 
-      <style jsx>{`
-        @media (min-width: 769px) {
-          div[style*="marginLeft: 0"] {
-            margin-left: 250px !important;
-            width: calc(100% - 250px) !important;
-          }
-          div[style*="marginTop: '60px'"] {
-            margin-top: 20px !important;
-          }
-        }
-        @media (max-width: 768px) {
-          div[style*="gridTemplateColumns"] {
-            grid-template-columns: repeat(2, 1fr) !important;
-          }
-          table {
-            font-size: 12px;
-          }
-          th, td {
-            padding: 8px 12px !important;
-          }
-        }
-        @media (max-width: 480px) {
-          div[style*="gridTemplateColumns"] {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
+      {/* ROI Records */}
+      <div style={{ 
+        background: 'white',
+        borderRadius: '16px',
+        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+        border: '1px solid #e5e7eb',
+        overflow: 'hidden',
+        width: '100%'
+      }}>
+        <div style={{ padding: '16px', borderBottom: '1px solid #e5e7eb' }}>
+          <h2 style={{ 
+            margin: 0,
+            fontSize: 'clamp(18px, 4vw, 20px)',
+            fontWeight: '600',
+            color: '#111827'
+          }}>
+            ROI History
+          </h2>
+        </div>
+        
+        {records.length > 0 ? (
+          <div style={{ overflowX: 'auto', width: '100%' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '300px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f9fafb' }}>
+                  <th style={{ padding: '10px 12px', textAlign: 'left', fontSize: '11px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase' }}>Date</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'left', fontSize: '11px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase' }}>Amount</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'left', fontSize: '11px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase' }}>Type</th>
+                </tr>
+              </thead>
+              <tbody>
+                {records.map((record, index) => (
+                  <tr key={record.id || index} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                    <td style={{ padding: '10px 12px', fontSize: 'clamp(11px, 3vw, 14px)', color: '#6b7280' }}>
+                      {new Date(record.createdAt).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric' 
+                      })}
+                    </td>
+                    <td style={{ padding: '10px 12px', fontWeight: '600', color: '#10b981', fontSize: 'clamp(13px, 3.5vw, 16px)' }}>
+                      ${record.amount.toFixed(2)}
+                    </td>
+                    <td style={{ padding: '10px 12px' }}>
+                      <span style={{
+                        padding: '4px 10px',
+                        borderRadius: '12px',
+                        fontSize: '10px',
+                        fontWeight: '500',
+                        backgroundColor: record.type === 'SELF' ? '#dbeafe' : '#fef3c7',
+                        color: record.type === 'SELF' ? '#1e40af' : '#92400e',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {record.type === 'SELF' ? 'Own ROI' : record.type.replace('REFERRAL_LEVEL_', 'L')}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '60px 20px', 
+            color: '#6b7280'
+          }}>
+            <p style={{ fontSize: 'clamp(14px, 3.5vw, 16px)', margin: 0 }}>No ROI records yet. Start investing to earn daily ROI!</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import './globals.css'
 import ToastContainer from '../components/Toast'
+import BottomNav from '../components/BottomNav'
 
 export const metadata = {
   title: 'Telegram Investment App',
@@ -10,12 +11,13 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
         <script src="https://telegram.org/js/telegram-web-app.js"></script>
       </head>
       <body>
         {children}
         <ToastContainer />
+        <BottomNav />
       </body>
     </html>
   )

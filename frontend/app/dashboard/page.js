@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Sidebar from '../../components/Sidebar';
-import MobileSidebar from '../../components/MobileSidebar';
 import ROICountdown from '../../components/ROICountdown';
 import { getUser, getROI } from '../../services/api';
 import { showToast } from '../../components/Toast';
@@ -80,7 +78,8 @@ export default function Dashboard() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#f9fafb'
+        backgroundColor: '#f9fafb',
+        padding: '20px'
       }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{
@@ -119,323 +118,276 @@ export default function Dashboard() {
     <div style={{ 
       minHeight: '100vh',
       backgroundColor: '#f9fafb',
-      display: 'flex'
+      padding: '16px',
+      paddingBottom: '80px',
+      width: '100%',
+      maxWidth: '100%',
+      overflowX: 'hidden'
     }}>
-      {/* Desktop Sidebar */}
-      <div style={{ display: 'none' }}>
-        <Sidebar />
-      </div>
-      <style jsx>{`
-        @media (min-width: 769px) {
-          div[style*="display: none"] {
-            display: block !important;
-          }
-        }
-      `}</style>
-      
-      {/* Mobile Sidebar */}
-      <div style={{ display: 'block' }}>
-        <MobileSidebar />
-      </div>
-      <style jsx>{`
-        @media (min-width: 769px) {
-          div[style*="display: block"]:has(+ style) {
-            display: none !important;
-          }
-        }
-      `}</style>
-      
-      <div style={{ 
-        flex: 1,
-        marginLeft: 0,
-        padding: '20px',
-        width: '100%',
-        maxWidth: '100%'
+      <h1 style={{ 
+        marginTop: '0',
+        marginBottom: '20px',
+        fontSize: 'clamp(24px, 5vw, 28px)',
+        fontWeight: 'bold',
+        color: '#111827'
       }}>
-        <style jsx>{`
-          @media (min-width: 769px) {
-            div {
-              marginLeft: '250px' !important;
-              width: 'calc(100% - 250px)' !important;
-            }
-          }
-        `}</style>
-        
-        <h1 style={{ 
-          marginTop: '60px',
-          marginBottom: '24px',
-          fontSize: '28px',
-          fontWeight: 'bold',
+        Dashboard
+      </h1>
+      
+      {/* ROI Countdown Timer */}
+      <div style={{ 
+        marginBottom: '16px',
+        padding: '16px',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        borderRadius: '16px',
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+        width: '100%'
+      }}>
+        <ROICountdown />
+      </div>
+
+      {/* Wallet Balance Card */}
+      <div style={{ 
+        marginBottom: '16px',
+        padding: '20px',
+        background: 'linear-gradient(135deg, #0088cc 0%, #0066aa 100%)',
+        borderRadius: '16px',
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+        color: 'white',
+        width: '100%'
+      }}>
+        <h2 style={{ 
+          marginTop: 0, 
+          marginBottom: '12px',
+          fontSize: 'clamp(16px, 4vw, 18px)',
+          fontWeight: '500',
+          opacity: 0.9
+        }}>
+          Wallet Balance
+        </h2>
+        <div style={{ 
+          fontSize: 'clamp(32px, 8vw, 42px)', 
+          fontWeight: 'bold', 
+          marginBottom: '8px',
+          wordBreak: 'break-word'
+        }}>
+          ${balance.toFixed(2)}
+        </div>
+        <p style={{ 
+          margin: 0, 
+          opacity: 0.8,
+          fontSize: 'clamp(12px, 3vw, 14px)'
+        }}>
+          Available for withdrawal
+        </p>
+      </div>
+
+      {/* Stats Grid */}
+      <div style={{ 
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(140px, 100%), 1fr))',
+        gap: '12px',
+        marginBottom: '16px',
+        width: '100%'
+      }}>
+        <div style={{
+          padding: '16px',
+          background: 'white',
+          borderRadius: '12px',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+          border: '1px solid #e5e7eb',
+          width: '100%'
+        }}>
+          <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '6px', fontWeight: '500' }}>
+            Total Deposits
+          </div>
+          <div style={{ fontSize: 'clamp(18px, 5vw, 24px)', fontWeight: 'bold', color: '#1e40af', wordBreak: 'break-word' }}>
+            ${totalDeposits.toFixed(2)}
+          </div>
+        </div>
+
+        <div style={{
+          padding: '16px',
+          background: 'white',
+          borderRadius: '12px',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+          border: '1px solid #e5e7eb',
+          width: '100%'
+        }}>
+          <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '6px', fontWeight: '500' }}>
+            Total ROI
+          </div>
+          <div style={{ fontSize: 'clamp(18px, 5vw, 24px)', fontWeight: 'bold', color: '#166534', wordBreak: 'break-word' }}>
+            ${totalROI.toFixed(2)}
+          </div>
+        </div>
+
+        <div style={{
+          padding: '16px',
+          background: 'white',
+          borderRadius: '12px',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+          border: '1px solid #e5e7eb',
+          width: '100%'
+        }}>
+          <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '6px', fontWeight: '500' }}>
+            Referral Income
+          </div>
+          <div style={{ fontSize: 'clamp(18px, 5vw, 24px)', fontWeight: 'bold', color: '#92400e', wordBreak: 'break-word' }}>
+            ${totalReferrals.toFixed(2)}
+          </div>
+        </div>
+
+        <div style={{
+          padding: '16px',
+          background: 'white',
+          borderRadius: '12px',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+          border: '1px solid #e5e7eb',
+          width: '100%'
+        }}>
+          <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '6px', fontWeight: '500' }}>
+            Active Deposits
+          </div>
+          <div style={{ fontSize: 'clamp(18px, 5vw, 24px)', fontWeight: 'bold', color: '#9f1239' }}>
+            {activeDeposits}
+          </div>
+        </div>
+
+        <div style={{
+          padding: '16px',
+          background: 'white',
+          borderRadius: '12px',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+          border: '1px solid #e5e7eb',
+          width: '100%'
+        }}>
+          <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '6px', fontWeight: '500' }}>
+            Total Referrals
+          </div>
+          <div style={{ fontSize: 'clamp(18px, 5vw, 24px)', fontWeight: 'bold', color: '#3730a3' }}>
+            {totalReferralCount}
+          </div>
+        </div>
+      </div>
+
+      {/* Referral Link Card */}
+      <div style={{ 
+        marginBottom: '16px',
+        padding: '16px',
+        background: 'white',
+        borderRadius: '16px',
+        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+        border: '1px solid #e5e7eb',
+        width: '100%'
+      }}>
+        <h3 style={{ 
+          marginTop: 0, 
+          marginBottom: '12px',
+          fontSize: 'clamp(16px, 4vw, 18px)',
+          fontWeight: '600',
           color: '#111827'
         }}>
-          Dashboard
-        </h1>
-        
-        {/* ROI Countdown Timer */}
-        <div style={{ 
-          marginBottom: '24px',
-          padding: '16px',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          borderRadius: '16px',
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+          Your Referral Link
+        </h3>
+        <p style={{ 
+          fontSize: 'clamp(12px, 3vw, 14px)', 
+          color: '#6b7280', 
+          marginBottom: '12px',
+          lineHeight: '1.5'
         }}>
-          <ROICountdown />
-        </div>
-
-        {/* Wallet Balance Card */}
+          Share this link to invite others and earn commissions from their investments
+        </p>
         <div style={{ 
-          marginBottom: '24px',
-          padding: '24px',
-          background: 'linear-gradient(135deg, #0088cc 0%, #0066aa 100%)',
-          borderRadius: '16px',
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-          color: 'white'
+          display: 'flex', 
+          gap: '8px',
+          flexDirection: 'column',
+          width: '100%'
         }}>
-          <h2 style={{ 
-            marginTop: 0, 
-            marginBottom: '12px',
-            fontSize: '18px',
-            fontWeight: '500',
-            opacity: 0.9
-          }}>
-            Wallet Balance
-          </h2>
-          <div style={{ 
-            fontSize: '42px', 
-            fontWeight: 'bold', 
-            marginBottom: '8px'
-          }}>
-            ${balance.toFixed(2)}
-          </div>
-          <p style={{ 
-            margin: 0, 
-            opacity: 0.8,
-            fontSize: '14px'
-          }}>
-            Available for withdrawal
-          </p>
-        </div>
-
-        {/* Stats Grid */}
-        <div style={{ 
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-          gap: '16px',
-          marginBottom: '24px'
-        }}>
-          <div style={{
-            padding: '20px',
-            background: 'white',
-            borderRadius: '12px',
-            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-            border: '1px solid #e5e7eb'
-          }}>
-            <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px', fontWeight: '500' }}>
-              Total Deposits
-            </div>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#1e40af' }}>
-              ${totalDeposits.toFixed(2)}
-            </div>
-          </div>
-
-          <div style={{
-            padding: '20px',
-            background: 'white',
-            borderRadius: '12px',
-            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-            border: '1px solid #e5e7eb'
-          }}>
-            <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px', fontWeight: '500' }}>
-              Total ROI
-            </div>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#166534' }}>
-              ${totalROI.toFixed(2)}
-            </div>
-          </div>
-
-          <div style={{
-            padding: '20px',
-            background: 'white',
-            borderRadius: '12px',
-            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-            border: '1px solid #e5e7eb'
-          }}>
-            <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px', fontWeight: '500' }}>
-              Referral Income
-            </div>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#92400e' }}>
-              ${totalReferrals.toFixed(2)}
-            </div>
-          </div>
-
-          <div style={{
-            padding: '20px',
-            background: 'white',
-            borderRadius: '12px',
-            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-            border: '1px solid #e5e7eb'
-          }}>
-            <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px', fontWeight: '500' }}>
-              Active Deposits
-            </div>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#9f1239' }}>
-              {activeDeposits}
-            </div>
-          </div>
-
-          <div style={{
-            padding: '20px',
-            background: 'white',
-            borderRadius: '12px',
-            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-            border: '1px solid #e5e7eb'
-          }}>
-            <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px', fontWeight: '500' }}>
-              Total Referrals
-            </div>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#3730a3' }}>
-              {totalReferralCount}
-            </div>
-          </div>
-        </div>
-
-        {/* Referral Link Card */}
-        <div style={{ 
-          marginBottom: '24px',
-          padding: '20px',
-          background: 'white',
-          borderRadius: '16px',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-          border: '1px solid #e5e7eb'
-        }}>
-          <h3 style={{ 
-            marginTop: 0, 
-            marginBottom: '12px',
-            fontSize: '18px',
-            fontWeight: '600',
-            color: '#111827'
-          }}>
-            Your Referral Link
-          </h3>
-          <p style={{ 
-            fontSize: '14px', 
-            color: '#6b7280', 
-            marginBottom: '16px',
-            lineHeight: '1.5'
-          }}>
-            Share this link to invite others and earn commissions from their investments
-          </p>
-          <div style={{ 
-            display: 'flex', 
-            gap: '12px',
-            flexDirection: 'column'
-          }}>
-            <input
-              type="text"
-              value={referralLink}
-              readOnly
-              style={{
-                flex: 1,
-                padding: '12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                fontSize: '14px',
-                backgroundColor: '#f9fafb',
-                color: '#111827'
-              }}
-            />
-            <button
-              onClick={copyReferralLink}
-              style={{
-                padding: '12px 24px',
-                background: 'linear-gradient(135deg, #0088cc 0%, #0066aa 100%)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '16px',
-                fontWeight: '600',
-                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-                transition: 'transform 0.2s',
-                width: '100%'
-              }}
-              onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
-              onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
-            >
-              Copy Link
-            </button>
-          </div>
-        </div>
-
-        {/* User Profile Card */}
-        <div style={{ 
-          padding: '20px',
-          background: 'white',
-          borderRadius: '16px',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-          border: '1px solid #e5e7eb'
-        }}>
-          <h2 style={{ 
-            marginTop: 0,
-            marginBottom: '16px',
-            fontSize: '18px',
-            fontWeight: '600',
-            color: '#111827'
-          }}>
-            Profile
-          </h2>
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '12px'
-          }}>
-            <div>
-              <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Telegram ID</div>
-              <div style={{ fontSize: '14px', fontWeight: '500', color: '#111827' }}>{user.telegramId}</div>
-            </div>
-            {user.username && (
-              <div>
-                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Username</div>
-                <div style={{ fontSize: '14px', fontWeight: '500', color: '#111827' }}>@{user.username}</div>
-              </div>
-            )}
-            {user.firstName && (
-              <div>
-                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>First Name</div>
-                <div style={{ fontSize: '14px', fontWeight: '500', color: '#111827' }}>{user.firstName}</div>
-              </div>
-            )}
-            {user.lastName && (
-              <div>
-                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Last Name</div>
-                <div style={{ fontSize: '14px', fontWeight: '500', color: '#111827' }}>{user.lastName}</div>
-              </div>
-            )}
-          </div>
+          <input
+            type="text"
+            value={referralLink}
+            readOnly
+            style={{
+              width: '100%',
+              padding: '10px',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              fontSize: 'clamp(12px, 3vw, 14px)',
+              backgroundColor: '#f9fafb',
+              color: '#111827'
+            }}
+          />
+          <button
+            onClick={copyReferralLink}
+            style={{
+              width: '100%',
+              padding: '12px',
+              background: 'linear-gradient(135deg, #0088cc 0%, #0066aa 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: 'clamp(14px, 3.5vw, 16px)',
+              fontWeight: '600',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+              transition: 'transform 0.2s'
+            }}
+            onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
+            onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            Copy Link
+          </button>
         </div>
       </div>
 
-      <style jsx>{`
-        @media (min-width: 769px) {
-          div[style*="marginLeft: 0"] {
-            margin-left: 250px !important;
-            width: calc(100% - 250px) !important;
-          }
-          div[style*="marginTop: '60px'"] {
-            margin-top: 20px !important;
-          }
-        }
-        @media (max-width: 768px) {
-          div[style*="gridTemplateColumns"] {
-            grid-template-columns: repeat(2, 1fr) !important;
-          }
-        }
-        @media (max-width: 480px) {
-          div[style*="gridTemplateColumns"] {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
+      {/* User Profile Card */}
+      <div style={{ 
+        padding: '16px',
+        background: 'white',
+        borderRadius: '16px',
+        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+        border: '1px solid #e5e7eb',
+        width: '100%'
+      }}>
+        <h2 style={{ 
+          marginTop: 0,
+          marginBottom: '12px',
+          fontSize: 'clamp(16px, 4vw, 18px)',
+          fontWeight: '600',
+          color: '#111827'
+        }}>
+          Profile
+        </h2>
+        <div style={{ 
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(150px, 100%), 1fr))',
+          gap: '12px'
+        }}>
+          <div>
+            <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '4px' }}>Telegram ID</div>
+            <div style={{ fontSize: 'clamp(12px, 3vw, 14px)', fontWeight: '500', color: '#111827', wordBreak: 'break-word' }}>{user.telegramId}</div>
+          </div>
+          {user.username && (
+            <div>
+              <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '4px' }}>Username</div>
+              <div style={{ fontSize: 'clamp(12px, 3vw, 14px)', fontWeight: '500', color: '#111827' }}>@{user.username}</div>
+            </div>
+          )}
+          {user.firstName && (
+            <div>
+              <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '4px' }}>First Name</div>
+              <div style={{ fontSize: 'clamp(12px, 3vw, 14px)', fontWeight: '500', color: '#111827' }}>{user.firstName}</div>
+            </div>
+          )}
+          {user.lastName && (
+            <div>
+              <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '4px' }}>Last Name</div>
+              <div style={{ fontSize: 'clamp(12px, 3vw, 14px)', fontWeight: '500', color: '#111827' }}>{user.lastName}</div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
