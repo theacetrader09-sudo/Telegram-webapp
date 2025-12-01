@@ -1,5 +1,6 @@
 import express from 'express';
 import { adminAuth } from '../middleware/admin.middleware.js';
+import { getJobStatus } from '../jobs/dailyROI.job.js';
 import { 
   runROI, 
   sendROI, 
@@ -24,6 +25,23 @@ const router = express.Router();
 router.use(adminAuth);
 
 // ROI management endpoints
+router.get('/cron-status', (req, res) => {
+  try {
+    const status = getJobStatus();
+    res.json({
+      success: true,
+      ...status,
+      nextRunTimeFormatted: status.nextRunTime ? new Date(status.nextRunTime).toISOString() : null,
+      lastRunTimeFormatted: status.lastRunTime ? new Date(status.lastRunTime).toISOString() : null
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get cron job status',
+      message: error.message
+    });
+  }
+});
 router.post('/run-roi', runROI);
 router.post('/send-roi', sendROI);
 router.get('/roi-logs', getROILogsHandler);

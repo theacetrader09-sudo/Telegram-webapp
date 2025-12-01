@@ -34,7 +34,10 @@ app.use('/api/referral', referralRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString()
+  });
 });
 
 // 404 handler

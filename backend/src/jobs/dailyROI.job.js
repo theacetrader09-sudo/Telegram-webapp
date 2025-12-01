@@ -4,6 +4,7 @@ import { logError } from '../utils/logger.js';
 
 let isRunning = false;
 let lastRunTime = null;
+let cronTask = null;
 
 /**
  * Daily ROI calculation job
@@ -18,29 +19,45 @@ const dailyROIJob = async () => {
 
   isRunning = true;
   const startTime = new Date();
+  const startTimeISO = startTime.toISOString();
 
   try {
-    console.log('🔄 Starting daily ROI calculation...');
+    console.log(`🔄 [${startTimeISO}] Starting daily ROI calculation...`);
     
     const result = await calculateDailyROI();
 
     lastRunTime = new Date();
+    const endTime = new Date();
+    const duration = endTime - startTime;
     
-    console.log('✅ Daily ROI calculation completed:', {
+    console.log(`✅ [${endTime.toISOString()}] Daily ROI calculation completed:`, {
       processed: result.processed,
-      totalROI: result.totalROI.toFixed(2),
-      totalReferrals: result.totalReferrals.toFixed(2),
-      duration: `${result.duration}ms`
+      totalROI: `$${result.totalROI.toFixed(2)}`,
+      totalReferrals: `$${result.totalReferrals.toFixed(2)}`,
+      duration: `${duration}ms`,
+      timestamp: result.timestamp
     });
 
     if (result.errors && result.errors.length > 0) {
-      console.warn(`⚠️ ${result.errors.length} errors occurred during processing`);
+      console.warn(`⚠️ ${result.errors.length} errors occurred during processing:`, result.errors);
     }
+
+    // Log success
+    console.log(`📊 Summary: Processed ${result.processed} deposits, Total ROI: $${result.totalROI.toFixed(2)}, Referrals: $${result.totalReferrals.toFixed(2)}`);
   } catch (error) {
-    console.error('❌ Error in daily ROI job:', error);
-    await logError('DAILY_ROI_JOB', error);
+    const errorTime = new Date().toISOString();
+    console.error(`❌ [${errorTime}] Error in daily ROI job:`, error);
+    console.error('Error stack:', error.stack);
+    await logError('DAILY_ROI_JOB', error, {
+      startTime: startTimeISO,
+      errorMessage: error.message,
+      errorStack: error.stack
+    });
   } finally {
     isRunning = false;
+    const endTime = new Date();
+    const totalDuration = endTime - startTime;
+    console.log(`⏱️ ROI job completed in ${totalDuration}ms`);
   }
 };
 
@@ -49,18 +66,35 @@ const dailyROIJob = async () => {
  * Schedule: Every day at 00:00 UTC
  */
 export const startDailyROIJob = () => {
-  // Schedule: 0 0 * * * (every day at 00:00 UTC)
-  cron.schedule('0 0 * * *', dailyROIJob, {
-    scheduled: true,
-    timezone: 'UTC'
-  });
+  try {
+    // Schedule: 0 0 * * * (every day at 00:00 UTC)
+    cronTask = cron.schedule('0 0 * * *', dailyROIJob, {
+      scheduled: true,
+      timezone: 'UTC'
+    });
 
-  console.log('📅 Daily ROI job scheduled: Runs daily at 00:00 UTC');
+    const now = new Date();
+    const nextRun = getNextRunTime();
+    const timeUntilNext = nextRun - now;
+    const hoursUntil = Math.floor(timeUntilNext / (1000 * 60 * 60));
+    const minutesUntil = Math.floor((timeUntilNext % (1000 * 60 * 60)) / (1000 * 60));
 
-  // Optional: Run immediately on startup for testing (remove in production)
-  if (process.env.RUN_ROI_ON_STARTUP === 'true') {
-    console.log('🚀 Running ROI calculation on startup (testing mode)...');
-    dailyROIJob();
+    console.log('📅 Daily ROI job scheduled: Runs daily at 00:00 UTC');
+    console.log(`⏰ Next run: ${nextRun.toISOString()} (in ${hoursUntil}h ${minutesUntil}m)`);
+    console.log(`🕐 Current time: ${now.toISOString()}`);
+
+    // Optional: Run immediately on startup for testing (remove in production)
+    if (process.env.RUN_ROI_ON_STARTUP === 'true') {
+      console.log('🚀 Running ROI calculation on startup (testing mode)...');
+      setTimeout(() => {
+        dailyROIJob().catch(err => {
+          console.error('Failed to run ROI on startup:', err);
+        });
+      }, 5000); // Wait 5 seconds for server to fully start
+    }
+  } catch (error) {
+    console.error('❌ Failed to start ROI cron job:', error);
+    throw error;
   }
 };
 
@@ -69,10 +103,18 @@ export const startDailyROIJob = () => {
  * @returns {Object} - Job status information
  */
 export const getJobStatus = () => {
+  const nextRun = getNextRunTime();
+  const now = new Date();
+  const timeUntilNext = nextRun - now;
+  
   return {
     isRunning,
     lastRunTime,
-    nextRunTime: getNextRunTime()
+    nextRunTime: nextRun,
+    timeUntilNext: timeUntilNext,
+    isScheduled: cronTask !== null,
+    cronExpression: '0 0 * * *',
+    timezone: 'UTC'
   };
 };
 
@@ -96,10 +138,20 @@ const getNextRunTime = () => {
 /**
  * Manually trigger the job (for testing)
  */
-export const triggerManually = () => {
+export const triggerManually = async () => {
   if (isRunning) {
     throw new Error('ROI job is already running');
   }
-  return dailyROIJob();
+  return await dailyROIJob();
+};
+
+/**
+ * Stop the cron job
+ */
+export const stopDailyROIJob = () => {
+  if (cronTask) {
+    cronTask.stop();
+    console.log('🛑 Daily ROI job stopped');
+  }
 };
 
