@@ -15,8 +15,17 @@ export const runROI = async (req, res) => {
     const { userId } = req.body;
     const adminId = req.admin?.id || 'system';
 
+    console.log(`🚀 Admin ${adminId} manually triggering ROI calculation${userId ? ` for user ${userId}` : ' for all users'}`);
+
     // Run ROI calculation
     const result = await calculateDailyROI(userId || null);
+
+    console.log(`✅ ROI calculation completed:`, {
+      processed: result.processed,
+      totalROI: result.totalROI,
+      totalReferrals: result.totalReferrals,
+      errors: result.errors?.length || 0
+    });
 
     // Log admin action
     await logAdminAction({
@@ -27,22 +36,27 @@ export const runROI = async (req, res) => {
         userId: userId || 'all',
         processed: result.processed,
         totalROI: result.totalROI,
-        totalReferrals: result.totalReferrals
+        totalReferrals: result.totalReferrals,
+        errors: result.errors?.length || 0,
+        message: result.message || 'ROI calculation completed'
       }
     });
 
     return res.json({
       success: true,
-      ...result
+      ...result,
+      message: result.message || `Processed ${result.processed} deposits. Total ROI: $${result.totalROI.toFixed(2)}`
     });
   } catch (error) {
-    console.error('Error in runROI:', error);
+    console.error('❌ Error in runROI:', error);
+    console.error('Error stack:', error.stack);
     
     await logAdminAction({
       adminId: req.admin?.id || 'system',
       action: 'MANUAL_ROI_TRIGGER',
       status: 'FAILED',
-      error: error.message
+      error: error.message,
+      stack: error.stack
     });
 
     return res.status(500).json({

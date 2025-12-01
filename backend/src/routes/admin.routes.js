@@ -42,6 +42,81 @@ router.get('/cron-status', (req, res) => {
     });
   }
 });
+router.get('/deposits/status', async (req, res) => {
+  try {
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+    
+    const statusCounts = await prisma.deposit.groupBy({
+      by: ['status'],
+      _count: { id: true }
+    });
+    
+    const activeDeposits = await prisma.deposit.findMany({
+      where: { status: 'ACTIVE' },
+      select: {
+        id: true,
+        userId: true,
+        amount: true,
+        packageId: true,
+        lastROIDate: true,
+        createdAt: true,
+        user: {
+          select: {
+            telegramId: true,
+            username: true
+          }
+        },
+        package: {
+          select: {
+            name: true,
+            dailyROI: true
+          }
+        }
+      }
+    });
+    
+    const approvedDeposits = await prisma.deposit.findMany({
+      where: { status: 'APPROVED' },
+      select: {
+        id: true,
+        userId: true,
+        amount: true,
+        packageId: true,
+        createdAt: true,
+        user: {
+          select: {
+            telegramId: true,
+            username: true
+          }
+        }
+      }
+    });
+    
+    await prisma.$disconnect();
+    
+    res.json({
+      success: true,
+      statusCounts,
+      activeDeposits: {
+        count: activeDeposits.length,
+        deposits: activeDeposits
+      },
+      approvedDeposits: {
+        count: approvedDeposits.length,
+        deposits: approvedDeposits,
+        message: approvedDeposits.length > 0 ? 'These deposits need to be activated (status = ACTIVE) to earn ROI' : null
+      }
+    });
+  } catch (error) {
+    console.error('Error getting deposit status:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get deposit status',
+      message: error.message
+    });
+  }
+});
 router.post('/run-roi', runROI);
 router.post('/send-roi', sendROI);
 router.get('/roi-logs', getROILogsHandler);

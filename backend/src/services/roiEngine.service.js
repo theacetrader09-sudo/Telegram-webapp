@@ -25,11 +25,13 @@ export const calculateDailyROI = async (userId = null) => {
   const errors = [];
 
   try {
-    // Build query for active deposits
+    // Build query for active deposits (ACTIVE status only)
     const whereClause = {
       status: 'ACTIVE',
       ...(userId && { userId })
     };
+
+    console.log(`🔍 Looking for deposits with status ACTIVE${userId ? ` for user ${userId}` : ' (all users)'}`);
 
     // Check if deposit was already processed today
     const deposits = await prisma.deposit.findMany({
@@ -44,8 +46,28 @@ export const calculateDailyROI = async (userId = null) => {
       }
     });
 
+    console.log(`📦 Found ${deposits.length} ACTIVE deposits${userId ? ` for user ${userId}` : ''}`);
+
+    if (deposits.length === 0) {
+      console.log(`⚠️ No ACTIVE deposits found. Make sure deposits have been activated (status = ACTIVE) and have a package assigned.`);
+      return {
+        success: true,
+        processed: 0,
+        totalROI: 0,
+        totalReferrals: 0,
+        errors: [],
+        duration: Date.now() - startTime,
+        timestamp: new Date().toISOString(),
+        message: 'No ACTIVE deposits found to process'
+      };
+    }
+
     // Filter deposits not processed today (using UTC for consistency)
     const depositsToProcess = deposits.filter(deposit => {
+      if (!deposit.package) {
+        console.warn(`⚠️ Deposit ${deposit.id} has no package assigned - skipping`);
+        return false;
+      }
       if (!deposit.lastROIDate) return true;
       const lastDate = new Date(deposit.lastROIDate);
       const lastDateUTC = new Date(Date.UTC(
@@ -54,21 +76,31 @@ export const calculateDailyROI = async (userId = null) => {
         lastDate.getUTCDate(),
         0, 0, 0, 0
       ));
-      return lastDateUTC.getTime() < todayUTC.getTime();
+      const shouldProcess = lastDateUTC.getTime() < todayUTC.getTime();
+      if (!shouldProcess) {
+        console.log(`⏭️ Deposit ${deposit.id} already processed today (lastROIDate: ${deposit.lastROIDate})`);
+      }
+      return shouldProcess;
     });
+
+    console.log(`✅ ${depositsToProcess.length} deposits ready to process (out of ${deposits.length} total)`);
 
     // Process each deposit
     for (const deposit of depositsToProcess) {
       try {
+        console.log(`💰 Processing deposit ${deposit.id} for user ${deposit.userId}: $${deposit.amount} (Package: ${deposit.package?.name || 'N/A'})`);
         const result = await processDepositROI(deposit);
         processedCount++;
         totalROI += result.roiAmount;
         totalReferrals += result.referralAmount;
+        console.log(`✅ Processed deposit ${deposit.id}: ROI $${result.roiAmount.toFixed(2)}, Referrals $${result.referralAmount.toFixed(2)}`);
       } catch (error) {
-        console.error(`Error processing deposit ${deposit.id}:`, error);
+        console.error(`❌ Error processing deposit ${deposit.id}:`, error);
         errors.push({
           depositId: deposit.id,
-          error: error.message
+          userId: deposit.userId,
+          error: error.message,
+          stack: error.stack
         });
       }
     }
