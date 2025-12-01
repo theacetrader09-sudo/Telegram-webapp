@@ -89,7 +89,34 @@ export const calculateDailyROI = async (userId = null) => {
     for (const deposit of depositsToProcess) {
       try {
         console.log(`💰 Processing deposit ${deposit.id} for user ${deposit.userId}: $${deposit.amount} (Package: ${deposit.package?.name || 'N/A'})`);
+        
+        // Get wallet balance before processing
+        const walletBefore = await prisma.wallet.findUnique({
+          where: { userId: deposit.userId }
+        });
+        const balanceBefore = walletBefore?.balance || 0;
+        
         const result = await processDepositROI(deposit);
+        
+        // Verify wallet balance was updated
+        const walletAfter = await prisma.wallet.findUnique({
+          where: { userId: deposit.userId }
+        });
+        const balanceAfter = walletAfter?.balance || 0;
+        const expectedBalance = balanceBefore + result.roiAmount;
+        
+        if (Math.abs(balanceAfter - expectedBalance) > 0.01) {
+          console.error(`⚠️ WALLET UPDATE VERIFICATION FAILED for user ${deposit.userId}: Expected $${expectedBalance.toFixed(2)}, Got $${balanceAfter.toFixed(2)}`);
+          // Force update
+          await prisma.wallet.update({
+            where: { userId: deposit.userId },
+            data: { balance: expectedBalance }
+          });
+          console.log(`✅ Force-updated wallet for user ${deposit.userId} to $${expectedBalance.toFixed(2)}`);
+        } else {
+          console.log(`✅ Wallet verified for user ${deposit.userId}: $${balanceBefore.toFixed(2)} → $${balanceAfter.toFixed(2)} (+$${result.roiAmount.toFixed(2)})`);
+        }
+        
         processedCount++;
         totalROI += result.roiAmount;
         totalReferrals += result.referralAmount;
