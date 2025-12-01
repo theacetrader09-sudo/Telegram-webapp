@@ -10,8 +10,14 @@ import { notifyROICredited } from './notification.service.js';
  */
 export const calculateDailyROI = async (userId = null) => {
   const startTime = Date.now();
+  // Use UTC date for consistency (ROI runs at 00:00 UTC)
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayUTC = new Date(Date.UTC(
+    today.getUTCFullYear(),
+    today.getUTCMonth(),
+    today.getUTCDate(),
+    0, 0, 0, 0
+  ));
 
   let processedCount = 0;
   let totalROI = 0;
@@ -38,12 +44,17 @@ export const calculateDailyROI = async (userId = null) => {
       }
     });
 
-    // Filter deposits not processed today
+    // Filter deposits not processed today (using UTC for consistency)
     const depositsToProcess = deposits.filter(deposit => {
       if (!deposit.lastROIDate) return true;
       const lastDate = new Date(deposit.lastROIDate);
-      lastDate.setHours(0, 0, 0, 0);
-      return lastDate.getTime() < today.getTime();
+      const lastDateUTC = new Date(Date.UTC(
+        lastDate.getUTCFullYear(),
+        lastDate.getUTCMonth(),
+        lastDate.getUTCDate(),
+        0, 0, 0, 0
+      ));
+      return lastDateUTC.getTime() < todayUTC.getTime();
     });
 
     // Process each deposit
@@ -121,8 +132,8 @@ export const processDepositROI = async (deposit) => {
       });
     }
 
-    // Create ROI record for user
-    await tx.rOIRecord.create({
+    // Create ROI record for user (createdAt will be in UTC automatically)
+    const roiRecord = await tx.rOIRecord.create({
       data: {
         userId: user.id,
         depositId: deposit.id,
@@ -130,6 +141,8 @@ export const processDepositROI = async (deposit) => {
         type: 'SELF'
       }
     });
+    
+    console.log(`✅ Created ROI record for user ${user.id}: $${dailyROI.toFixed(2)} at ${roiRecord.createdAt.toISOString()}`);
 
     // Update user wallet balance
     await tx.wallet.update({

@@ -68,6 +68,8 @@ export const getROISummary = async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
+    console.log(`📊 Fetching ROI summary for user ${userId}: Found ${roiRecords.length} ROI records`);
+
     // Get deposit and package info for each ROI record
     const roiRecordsWithPackage = await Promise.all(
       roiRecords.map(async (record) => {
@@ -101,9 +103,14 @@ export const getROISummary = async (req, res) => {
       })
     );
 
-    // Calculate today's date (start of day)
+    // Calculate today's date in UTC (start of day) to match ROI calculation timezone
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const todayUTC = new Date(Date.UTC(
+      today.getUTCFullYear(),
+      today.getUTCMonth(),
+      today.getUTCDate(),
+      0, 0, 0, 0
+    ));
 
     // Calculate totals
     const totalROI = roiRecordsWithPackage
@@ -114,12 +121,18 @@ export const getROISummary = async (req, res) => {
       .filter(r => r.type.startsWith('REFERRAL'))
       .reduce((sum, r) => sum + r.amount, 0);
 
-    // Calculate today's ROI
+    // Calculate today's ROI (using UTC dates for consistency)
     const todayROI = roiRecordsWithPackage
       .filter(r => {
+        if (r.type !== 'SELF') return false;
         const recordDate = new Date(r.createdAt);
-        recordDate.setHours(0, 0, 0, 0);
-        return recordDate.getTime() === today.getTime() && r.type === 'SELF';
+        const recordDateUTC = new Date(Date.UTC(
+          recordDate.getUTCFullYear(),
+          recordDate.getUTCMonth(),
+          recordDate.getUTCDate(),
+          0, 0, 0, 0
+        ));
+        return recordDateUTC.getTime() === todayUTC.getTime();
       })
       .reduce((sum, r) => sum + r.amount, 0);
 
@@ -158,6 +171,32 @@ export const getROISummary = async (req, res) => {
       _count: true
     });
 
+    const totalReferralsCount = await prisma.user.count({
+      where: { referredBy: req.user.telegramId }
+    });
+
+    // Debug logging
+    const todayRecords = roiRecordsWithPackage.filter(r => {
+      if (r.type !== 'SELF') return false;
+      const recordDate = new Date(r.createdAt);
+      const recordDateUTC = new Date(Date.UTC(
+        recordDate.getUTCFullYear(),
+        recordDate.getUTCMonth(),
+        recordDate.getUTCDate(),
+        0, 0, 0, 0
+      ));
+      return recordDateUTC.getTime() === todayUTC.getTime();
+    });
+    
+    console.log(`📈 ROI Summary for user ${userId}:`, {
+      totalROI: totalROI.toFixed(2),
+      todayROI: todayROI.toFixed(2),
+      todayRecordsCount: todayRecords.length,
+      totalReferrals: totalReferrals.toFixed(2),
+      totalRecords: roiRecords.length,
+      todayUTC: todayUTC.toISOString()
+    });
+
     return res.json({
       success: true,
       totalROI,
@@ -166,9 +205,7 @@ export const getROISummary = async (req, res) => {
       totalDeposits: approvedDeposits._sum.amount || 0,
       activeDeposits: activeDeposits.length,
       activePackage,
-      totalReferralsCount: await prisma.user.count({
-        where: { referredBy: req.user.telegramId }
-      }),
+      totalReferralsCount,
       roiRecords: await Promise.all(
         roiRecordsWithPackage.slice(0, 100).map(async (record) => {
           let depositAmount = null;
