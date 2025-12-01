@@ -18,14 +18,41 @@ export const findOrCreateUser = async (tgUserObj, referral = null) => {
   });
 
   if (user) {
-    // Update existing user if needed
+    // Update existing user info
+    const updateData = {
+      username: username || user.username,
+      firstName: firstName || user.firstName,
+      lastName: lastName || user.lastName
+    };
+
+    // If referral is provided and user doesn't have a referrer, allow re-referral
+    if (referral && !user.referredBy) {
+      // Find referrer
+      const referrer = await prisma.user.findUnique({
+        where: { telegramId: referral }
+      });
+
+      if (referrer) {
+        // Prevent self-referral
+        if (referrer.telegramId !== user.telegramId) {
+          // Prevent referral loops
+          if (!user.referralChain.includes(referrer.telegramId)) {
+            updateData.referredBy = referrer.telegramId;
+            // Build referral chain: prepend referrer's telegramId to their chain, limit to 10
+            updateData.referralChain = [referrer.telegramId, ...referrer.referralChain].slice(0, 10);
+            console.log(`✅ Updated referral for existing user ${telegramId} to ${referral}`);
+          } else {
+            console.log(`⚠️ Referral loop detected for user ${telegramId}, skipping`);
+          }
+        } else {
+          console.log(`⚠️ Self-referral prevented for user ${telegramId}`);
+        }
+      }
+    }
+
     user = await prisma.user.update({
       where: { telegramId },
-      data: {
-        username: username || user.username,
-        firstName: firstName || user.firstName,
-        lastName: lastName || user.lastName
-      }
+      data: updateData
     });
     return user;
   }

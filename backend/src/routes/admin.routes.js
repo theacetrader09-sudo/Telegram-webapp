@@ -13,7 +13,8 @@ import {
   rejectWithdrawal,
   completeWithdrawal,
   getAllUsers,
-  getUserById
+  getUserById,
+  resetUserReferral
 } from '../controllers/admin.controller.js';
 
 const router = express.Router();
@@ -41,5 +42,6 @@ router.post('/withdrawals/:id/complete', completeWithdrawal);
 // User management
 router.get('/users', getAllUsers);
 router.get('/users/:id', getUserById);
+router.post('/users/:id/reset-referral', resetUserReferral);
 
 export default router;

@@ -953,3 +953,82 @@ export const getUserById = async (req, res) => {
   }
 };
 
+/**
+ * Reset user referral (allow re-referral)
+ * POST /admin/users/:id/reset-referral
+ */
+export const resetUserReferral = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await prisma.user.findUnique({
+      where: { id }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Store previous referrer for logging
+    const previousReferrer = user.referredBy;
+
+    // Clear referral data
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: {
+        referredBy: null,
+        referralChain: []
+      },
+      include: {
+        referrer: {
+          select: {
+            telegramId: true,
+            username: true,
+            firstName: true,
+            lastName: true
+          }
+        }
+      }
+    });
+
+    // Log admin action
+    await prisma.systemLog.create({
+      data: {
+        action: 'ADMIN_ACTION',
+        userId: id,
+        status: 'SUCCESS',
+        details: {
+          action: 'RESET_USER_REFERRAL',
+          adminId: req.admin?.id || 'admin',
+          previousReferrer: previousReferrer,
+          userTelegramId: user.telegramId
+        }
+      }
+    });
+
+    console.log(`✅ Admin reset referral for user ${user.telegramId} (ID: ${id})`);
+
+    return res.json({
+      success: true,
+      message: 'User referral reset successfully. User can now be referred again.',
+      user: {
+        id: updatedUser.id,
+        telegramId: updatedUser.telegramId,
+        username: updatedUser.username,
+        referredBy: updatedUser.referredBy,
+        referralChain: updatedUser.referralChain
+      }
+    });
+  } catch (error) {
+    console.error('Error resetting user referral:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to reset user referral',
+      message: error.message
+    });
+  }
+};
+

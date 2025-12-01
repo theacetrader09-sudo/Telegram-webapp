@@ -1,5 +1,7 @@
 import { validateInitData } from '../utils/verifyTelegram.js';
 import { findOrCreateUser } from '../services/user.service.js';
+import { getTempReferral, clearTempReferral } from '../bot/bot.service.js';
+import prisma from '../lib/prisma.js';
 
 /**
  * Telegram login endpoint
@@ -37,12 +39,43 @@ export const telegramLogin = async (req, res) => {
       });
     }
 
+    // Get referral from Redis if not provided in request
+    let referralCode = referral;
+    if (!referralCode) {
+      const telegramId = user.id.toString();
+      const tempReferral = await getTempReferral(telegramId);
+      
+      if (tempReferral) {
+        // Extract user ID from REF_<user_id> format
+        if (tempReferral.startsWith('REF_')) {
+          const referrerUserId = tempReferral.replace('REF_', '');
+          // Get referrer's telegramId from database
+          const referrer = await prisma.user.findUnique({
+            where: { id: referrerUserId },
+            select: { telegramId: true }
+          });
+          
+          if (referrer) {
+            referralCode = referrer.telegramId;
+            // Clear the temp referral after use
+            await clearTempReferral(telegramId);
+            console.log(`✅ Applied referral ${referralCode} to user ${telegramId} from Redis`);
+          } else {
+            console.log(`⚠️ Referrer user ${referrerUserId} not found for referral code ${tempReferral}`);
+          }
+        } else {
+          // If it's already a telegramId, use it directly
+          referralCode = tempReferral;
+          await clearTempReferral(telegramId);
+          console.log(`✅ Applied referral ${referralCode} to user ${telegramId} from Redis`);
+        }
+      }
+    }
+
     // Find or create user with Prisma (includes referral logic)
-    const dbUser = await findOrCreateUser(user, referral || null);
+    const dbUser = await findOrCreateUser(user, referralCode || null);
 
     // Ensure wallet exists
-    const { PrismaClient } = await import('@prisma/client');
-    const prisma = new PrismaClient();
     
     let wallet = await prisma.wallet.findUnique({
       where: { userId: dbUser.id }

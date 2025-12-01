@@ -523,3 +523,25 @@ export const getUserByIdAdmin = async (userId) => {
   }
 };
 
+/**
+ * Reset user referral (admin)
+ * @param {string} userId - User ID
+ */
+export const resetUserReferralAdmin = async (userId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/reset-referral`, {
+      method: 'POST',
+      headers: getAdminHeaders(),
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Reset user referral error:', error);
+    return {
+      success: false,
+      error: error.message || 'Network error'
+    };
+  }
+};
+

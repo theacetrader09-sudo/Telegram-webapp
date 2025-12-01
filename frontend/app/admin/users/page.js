@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { verifyAdmin, getAllUsersAdmin, getUserByIdAdmin } from '../../../services/api';
+import { verifyAdmin, getAllUsersAdmin, getUserByIdAdmin, resetUserReferralAdmin } from '../../../services/api';
 import { showToast } from '../../../components/Toast';
 
 export default function AdminUsers() {
@@ -16,6 +16,7 @@ export default function AdminUsers() {
   const [showUserDetail, setShowUserDetail] = useState(false);
   const [userDetail, setUserDetail] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [resettingReferral, setResettingReferral] = useState(null);
 
   useEffect(() => {
     checkAuth();
@@ -74,6 +75,27 @@ export default function AdminUsers() {
       showToast('Failed to load user details', 'error');
     } finally {
       setLoadingDetail(false);
+    }
+  };
+
+  const handleResetReferral = async (userId) => {
+    if (!confirm('Are you sure you want to reset this user\'s referral? They will be able to be referred again with a new sponsor.')) {
+      return;
+    }
+
+    setResettingReferral(userId);
+    try {
+      const response = await resetUserReferralAdmin(userId);
+      if (response.success) {
+        showToast('User referral reset successfully! User can now be referred again.', 'success');
+        loadUsers(); // Reload users list
+      } else {
+        showToast(response.error || 'Failed to reset referral', 'error');
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to reset referral', 'error');
+    } finally {
+      setResettingReferral(null);
     }
   };
 
@@ -221,6 +243,7 @@ export default function AdminUsers() {
                       <th style={{ padding: '12px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6b7280' }}>Wallet</th>
                       <th style={{ padding: '12px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6b7280' }}>Deposits</th>
                       <th style={{ padding: '12px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6b7280' }}>Referrals</th>
+                      <th style={{ padding: '12px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6b7280' }}>Referred By</th>
                       <th style={{ padding: '12px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6b7280' }}>Joined</th>
                       <th style={{ padding: '12px', textAlign: 'left', fontSize: '12px', fontWeight: '600', color: '#6b7280' }}>Actions</th>
                     </tr>
@@ -256,25 +279,60 @@ export default function AdminUsers() {
                             {user.activeDeposits || 0} active
                           </div>
                         </td>
+                        <td style={{ padding: '12px', fontSize: '14px' }}>
+                          {user.referredBy ? (
+                            <div>
+                              <div style={{ fontWeight: '500' }}>
+                                {user.referrer?.username ? `@${user.referrer.username}` : user.referredBy}
+                              </div>
+                              {user.referrer?.firstName && (
+                                <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                                  {user.referrer.firstName} {user.referrer.lastName || ''}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>No referrer</span>
+                          )}
+                        </td>
                         <td style={{ padding: '12px', fontSize: '12px', color: '#6b7280' }}>
                           {formatDate(user.createdAt)}
                         </td>
                         <td style={{ padding: '12px' }}>
-                          <button
-                            onClick={() => loadUserDetail(user.id)}
-                            style={{
-                              padding: '6px 12px',
-                              backgroundColor: '#3b82f6',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '6px',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              fontWeight: '500'
-                            }}
-                          >
-                            View Details
-                          </button>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <button
+                              onClick={() => loadUserDetail(user.id)}
+                              style={{
+                                padding: '6px 12px',
+                                backgroundColor: '#3b82f6',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                fontWeight: '500'
+                              }}
+                            >
+                              View Details
+                            </button>
+                            <button
+                              onClick={() => handleResetReferral(user.id)}
+                              disabled={resettingReferral === user.id}
+                              style={{
+                                padding: '6px 12px',
+                                backgroundColor: resettingReferral === user.id ? '#9ca3af' : '#ef4444',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                cursor: resettingReferral === user.id ? 'not-allowed' : 'pointer',
+                                fontSize: '12px',
+                                fontWeight: '500',
+                                opacity: resettingReferral === user.id ? 0.6 : 1
+                              }}
+                            >
+                              {resettingReferral === user.id ? 'Resetting...' : 'Reset Referral'}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
