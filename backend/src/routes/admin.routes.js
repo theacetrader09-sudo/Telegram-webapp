@@ -45,8 +45,7 @@ router.get('/cron-status', (req, res) => {
 });
 router.get('/deposits/status', async (req, res) => {
   try {
-    const { PrismaClient } = require('@prisma/client');
-    const prisma = new PrismaClient();
+    const prisma = (await import('../lib/prisma.js')).default;
     
     const statusCounts = await prisma.deposit.groupBy({
       by: ['status'],
@@ -93,8 +92,6 @@ router.get('/deposits/status', async (req, res) => {
         }
       }
     });
-    
-    await prisma.$disconnect();
     
     res.json({
       success: true,

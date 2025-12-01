@@ -2,9 +2,7 @@ import { calculateDailyROI } from '../services/roiEngine.service.js';
 import { sendROIToUser } from '../services/adminROI.service.js';
 import { getROILogs } from '../utils/logger.js';
 import { logAdminAction } from '../utils/logger.js';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../lib/prisma.js';
 
 /**
  * Manually trigger ROI calculation

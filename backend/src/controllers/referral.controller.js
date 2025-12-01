@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma.js';
 import { COMMISSION_RATES } from '../services/referralCommission.service.js';
-
-const prisma = new PrismaClient();
 
 /**
  * Get referral tree (10 levels)
