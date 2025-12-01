@@ -31,18 +31,23 @@ export default function Sidebar({ className = '' }: SidebarProps) {
   ];
 
   return (
-    <div className={`sidebar ${className}`} style={{
-      width: '250px',
-      minHeight: '100vh',
-      backgroundColor: '#1f2937',
-      color: 'white',
-      padding: '20px 0',
-      position: 'fixed',
-      left: 0,
-      top: 0,
-      display: 'flex',
-      flexDirection: 'column'
-    }}>
+    <>
+      {/* Desktop Sidebar - Hidden on mobile */}
+      <div className={`sidebar ${className}`} style={{
+        width: '250px',
+        minHeight: '100vh',
+        backgroundColor: '#1f2937',
+        color: 'white',
+        padding: '20px 0',
+        position: 'fixed',
+        left: 0,
+        top: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        '@media (max-width: 768px)': {
+          display: 'none'
+        }
+      }}>
       <div style={{ padding: '0 20px 20px', borderBottom: '1px solid #374151' }}>
         <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 'bold' }}>Investment App</h2>
       </div>
@@ -93,6 +98,14 @@ export default function Sidebar({ className = '' }: SidebarProps) {
         </button>
       </div>
     </div>
+    <style jsx>{`
+      @media (max-width: 768px) {
+        .sidebar {
+          display: none !important;
+        }
+      }
+    `}</style>
+    </>
   );
 }
 

@@ -23,8 +23,87 @@ model User {
 
   referrer User? @relation("ReferralChain", fields: [referredBy], references: [telegramId], onDelete: SetNull)
   referrals User[] @relation("ReferralChain")
+  
+  wallet      Wallet?
+  deposits    Deposit[]
+  withdrawals Withdrawal[]
+  roiRecords  ROIRecord[]
 
   @@map("users")
+}
+
+model Wallet {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  balance   Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("wallets")
+}
+
+model InvestmentPackage {
+  id        String   @id @default(uuid())
+  name      String
+  minAmount Float
+  maxAmount Float
+  dailyROI  Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  deposits Deposit[]
+
+  @@map("investment_packages")
+}
+
+model Deposit {
+  id          String   @id @default(uuid())
+  userId      String
+  packageId   String
+  amount      Float
+  status      String   @default("PENDING")
+  lastROIDate DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user    User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  package InvestmentPackage @relation(fields: [packageId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([status])
+  @@map("deposits")
+}
+
+model Withdrawal {
+  id        String   @id @default(uuid())
+  userId    String
+  amount    Float
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("withdrawals")
+}
+
+model ROIRecord {
+  id        String   @id @default(uuid())
+  userId    String
+  depositId String?
+  amount    Float
+  type      String   // 'SELF' or 'REFERRAL_LEVEL_1' to 'REFERRAL_LEVEL_10'
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("roi_records")
 }
 
 model SystemLog {

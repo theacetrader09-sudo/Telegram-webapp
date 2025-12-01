@@ -40,9 +40,24 @@ export const telegramLogin = async (req, res) => {
     // Find or create user with Prisma (includes referral logic)
     const dbUser = await findOrCreateUser(user, referral || null);
 
+    // Ensure wallet exists
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+    
+    let wallet = await prisma.wallet.findUnique({
+      where: { userId: dbUser.id }
+    });
+
+    if (!wallet) {
+      wallet = await prisma.wallet.create({
+        data: { userId: dbUser.id }
+      });
+    }
+
     // TODO: Generate real JWT token here
+    // For MVP, using user ID as token (simple approach)
     // Example: const token = jwt.sign({ userId: dbUser.id, telegramId: dbUser.telegramId }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    const token = `jwt_placeholder_${dbUser.id}_${Date.now()}`;
+    const token = dbUser.id;
 
     return res.json({
       success: true,
@@ -53,6 +68,7 @@ export const telegramLogin = async (req, res) => {
         username: dbUser.username,
         firstName: dbUser.firstName,
         lastName: dbUser.lastName,
+        referredBy: dbUser.referredBy,
         referralChain: dbUser.referralChain
       }
     });

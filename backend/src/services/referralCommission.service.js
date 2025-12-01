@@ -1,7 +1,7 @@
 import { notifyReferralCommission } from './notification.service.js';
 
 // Referral commission rates for 10 levels
-const COMMISSION_RATES = [
+export const COMMISSION_RATES = [
   0.10,  // Level 1: 10%
   0.05,  // Level 2: 5%
   0.03,  // Level 3: 3%

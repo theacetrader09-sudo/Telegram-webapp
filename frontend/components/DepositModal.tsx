@@ -66,13 +66,24 @@ export default function DepositModal({ package: pkg, onClose, onDeposit }: Depos
     }} onClick={onClose}>
       <div style={{
         backgroundColor: 'white',
-        borderRadius: '12px',
+        borderRadius: '16px',
         padding: '24px',
         width: '90%',
-        maxWidth: '400px',
-        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
+        maxWidth: '450px',
+        maxHeight: '90vh',
+        overflowY: 'auto',
+        boxShadow: '0 20px 25px rgba(0, 0, 0, 0.15)',
+        margin: '20px'
       }} onClick={(e) => e.stopPropagation()}>
-        <h2 style={{ marginTop: 0, marginBottom: '16px' }}>Deposit to {pkg.name}</h2>
+        <h2 style={{ 
+          marginTop: 0, 
+          marginBottom: '20px',
+          fontSize: '24px',
+          fontWeight: 'bold',
+          color: '#111827'
+        }}>
+          Deposit to {pkg.name}
+        </h2>
         
         <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#f3f4f6', borderRadius: '8px' }}>
           <p style={{ margin: '4px 0', fontSize: '14px' }}>
@@ -144,15 +155,22 @@ export default function DepositModal({ package: pkg, onClose, onDeposit }: Depos
               disabled={loading}
               style={{
                 flex: 1,
-                padding: '12px',
-                backgroundColor: loading ? '#9ca3af' : '#0088cc',
+                padding: '14px',
+                background: loading 
+                  ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)' 
+                  : 'linear-gradient(135deg, #0088cc 0%, #0066aa 100%)',
                 color: 'white',
                 border: 'none',
-                borderRadius: '6px',
+                borderRadius: '12px',
                 cursor: loading ? 'not-allowed' : 'pointer',
                 fontSize: '16px',
-                fontWeight: '500'
+                fontWeight: '600',
+                boxShadow: loading ? 'none' : '0 4px 6px rgba(0, 0, 0, 0.1)',
+                transition: 'transform 0.2s',
+                opacity: loading ? 0.7 : 1
               }}
+              onMouseDown={(e) => !loading && (e.currentTarget.style.transform = 'scale(0.98)')}
+              onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
             >
               {loading ? 'Processing...' : 'Deposit'}
             </button>

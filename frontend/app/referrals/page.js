@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '../../components/Sidebar';
+import MobileSidebar from '../../components/MobileSidebar';
 import { getReferralTree } from '../../services/api';
+import { showToast } from '../../components/Toast';
 
 export default function Referrals() {
   const router = useRouter();
@@ -24,7 +26,7 @@ export default function Referrals() {
 
       try {
         const userData = JSON.parse(storedUser);
-        const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || 'YOUR_BOT_USERNAME';
+        const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || 'Atherdy_bot';
         const refCode = `REF_${userData.id}`;
         setReferralLink(`https://t.me/${botUsername}?start=${refCode}`);
       } catch (err) {
@@ -43,9 +45,11 @@ export default function Referrals() {
         setReferralTree(response);
       } else {
         setError(response.error || 'Failed to load referral tree');
+        showToast(response.error || 'Failed to load referral tree', 'error');
       }
     } catch (err) {
       setError('Failed to load referral tree');
+      showToast('Failed to load referral tree', 'error');
       console.error(err);
     } finally {
       setLoading(false);
@@ -55,17 +59,39 @@ export default function Referrals() {
   const copyReferralLink = () => {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(referralLink);
-      alert('Referral link copied to clipboard!');
+      showToast('Referral link copied!', 'success');
+    } else {
+      showToast('Failed to copy link', 'error');
     }
   };
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', minHeight: '100vh' }}>
-        <Sidebar />
-        <div style={{ marginLeft: '250px', padding: '20px', textAlign: 'center' }}>
-          <p>Loading referral data...</p>
+      <div style={{ 
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f9fafb'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            width: '50px',
+            height: '50px',
+            border: '4px solid #e5e7eb',
+            borderTop: '4px solid #0088cc',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 20px'
+          }} />
+          <p style={{ color: '#6b7280', fontSize: '16px' }}>Loading referral data...</p>
         </div>
+        <style jsx>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
     );
   }
@@ -75,46 +101,77 @@ export default function Referrals() {
   const totalEarnings = referralTree?.totalEarnings || 0;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <Sidebar />
+    <div style={{ 
+      minHeight: '100vh',
+      backgroundColor: '#f9fafb',
+      display: 'flex'
+    }}>
+      <div style={{ display: 'none' }}>
+        <Sidebar />
+      </div>
+      <div style={{ display: 'block' }}>
+        <MobileSidebar />
+      </div>
       
       <div style={{ 
-        marginLeft: '250px',
+        flex: 1,
+        marginLeft: 0,
         padding: '20px',
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        width: 'calc(100% - 250px)'
+        width: '100%',
+        maxWidth: '100%'
       }}>
-        <h1 style={{ marginTop: 0 }}>Referrals</h1>
+        <h1 style={{ 
+          marginTop: '60px',
+          marginBottom: '24px',
+          fontSize: '28px',
+          fontWeight: 'bold',
+          color: '#111827'
+        }}>
+          Referrals
+        </h1>
 
         {error && (
           <div style={{
-            padding: '12px',
+            padding: '16px',
             backgroundColor: '#fee2e2',
             color: '#dc2626',
-            borderRadius: '8px',
-            marginBottom: '20px'
+            borderRadius: '12px',
+            marginBottom: '24px',
+            border: '1px solid #fecaca'
           }}>
             {error}
           </div>
         )}
 
-        {/* Referral Link */}
+        {/* Referral Link Card */}
         <div style={{ 
-          marginTop: '20px',
+          marginBottom: '24px',
           padding: '20px',
-          border: '1px solid #0088cc',
-          borderRadius: '8px',
-          backgroundColor: '#e3f2fd'
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          borderRadius: '16px',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+          color: 'white'
         }}>
-          <h3 style={{ marginTop: 0 }}>Your Referral Link</h3>
-          <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '10px' }}>
-            Share this link to invite others:
+          <h3 style={{ 
+            marginTop: 0, 
+            marginBottom: '12px',
+            fontSize: '20px',
+            fontWeight: '600'
+          }}>
+            Your Referral Link
+          </h3>
+          <p style={{ 
+            fontSize: '14px', 
+            opacity: 0.9, 
+            marginBottom: '16px',
+            lineHeight: '1.5'
+          }}>
+            Share this link to invite others and earn commissions from their investments
           </p>
           <div style={{ 
             display: 'flex', 
-            gap: '10px',
-            alignItems: 'center',
-            flexWrap: 'wrap'
+            gap: '12px',
+            flexDirection: 'column'
           }}>
             <input
               type="text"
@@ -122,26 +179,34 @@ export default function Referrals() {
               readOnly
               style={{
                 flex: 1,
-                minWidth: '200px',
-                padding: '8px',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                fontSize: '14px'
+                padding: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                borderRadius: '8px',
+                fontSize: '14px',
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                color: 'white',
+                backdropFilter: 'blur(10px)'
               }}
             />
             <button
               onClick={copyReferralLink}
               style={{
-                padding: '8px 16px',
-                backgroundColor: '#0088cc',
-                color: 'white',
+                padding: '12px 24px',
+                background: 'white',
+                color: '#667eea',
                 border: 'none',
-                borderRadius: '4px',
+                borderRadius: '8px',
                 cursor: 'pointer',
-                fontSize: '14px'
+                fontSize: '16px',
+                fontWeight: '600',
+                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                transition: 'transform 0.2s',
+                width: '100%'
               }}
+              onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
+              onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
             >
-              Copy
+              Copy Link
             </button>
           </div>
         </div>
@@ -149,17 +214,20 @@ export default function Referrals() {
         {/* Referral Statistics */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
           gap: '16px',
-          marginTop: '20px'
+          marginBottom: '24px'
         }}>
           <div style={{
             padding: '20px',
-            backgroundColor: '#eff6ff',
-            border: '1px solid #bfdbfe',
-            borderRadius: '8px'
+            background: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+            border: '1px solid #e5e7eb'
           }}>
-            <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>Total Referrals</div>
+            <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px', fontWeight: '500' }}>
+              Total Referrals
+            </div>
             <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#1e40af' }}>
               {totalReferrals}
             </div>
@@ -167,11 +235,14 @@ export default function Referrals() {
 
           <div style={{
             padding: '20px',
-            backgroundColor: '#f0fdf4',
-            border: '1px solid #bbf7d0',
-            borderRadius: '8px'
+            background: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+            border: '1px solid #e5e7eb'
           }}>
-            <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>Total Earnings</div>
+            <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px', fontWeight: '500' }}>
+              Total Earnings
+            </div>
             <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#166534' }}>
               ${totalEarnings.toFixed(2)}
             </div>
@@ -179,63 +250,84 @@ export default function Referrals() {
         </div>
 
         {/* Referral Tree by Levels */}
-        <div style={{ marginTop: '30px' }}>
-          <h2>Referral Tree (10 Levels)</h2>
+        <div style={{ marginTop: '24px' }}>
+          <h2 style={{
+            marginBottom: '20px',
+            fontSize: '22px',
+            fontWeight: '600',
+            color: '#111827'
+          }}>
+            Referral Tree (10 Levels)
+          </h2>
           
           {levels.length > 0 ? (
-            <div style={{ marginTop: '20px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {levels.map((level, index) => (
                 <div
                   key={index}
                   style={{
-                    marginBottom: '16px',
                     padding: '20px',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                    backgroundColor: 'white'
+                    background: 'white',
+                    borderRadius: '16px',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+                    border: '1px solid #e5e7eb'
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <h3 style={{ margin: 0, color: '#0088cc' }}>Level {index + 1}</h3>
-                    <div style={{ fontSize: '14px', color: '#6b7280' }}>
-                      {level.users?.length || 0} referrals
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    marginBottom: '16px',
+                    flexWrap: 'wrap',
+                    gap: '12px'
+                  }}>
+                    <h3 style={{ 
+                      margin: 0, 
+                      color: '#0088cc',
+                      fontSize: '18px',
+                      fontWeight: '600'
+                    }}>
+                      Level {level.level}
+                    </h3>
+                    <div style={{ fontSize: '14px', color: '#6b7280', fontWeight: '500' }}>
+                      {level.count || 0} referrals
                     </div>
                   </div>
 
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
                     gap: '12px',
-                    marginTop: '12px'
+                    marginBottom: '16px'
                   }}>
                     <div style={{
-                      padding: '12px',
+                      padding: '16px',
                       backgroundColor: '#f9fafb',
-                      borderRadius: '6px'
+                      borderRadius: '12px'
                     }}>
-                      <div style={{ fontSize: '12px', color: '#6b7280' }}>Users</div>
-                      <div style={{ fontSize: '20px', fontWeight: 'bold' }}>
+                      <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px', fontWeight: '500' }}>Users</div>
+                      <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#111827' }}>
                         {level.count || 0}
                       </div>
                     </div>
 
                     <div style={{
-                      padding: '12px',
+                      padding: '16px',
                       backgroundColor: '#f0fdf4',
-                      borderRadius: '6px'
+                      borderRadius: '12px'
                     }}>
-                      <div style={{ fontSize: '12px', color: '#6b7280' }}>Earnings</div>
+                      <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px', fontWeight: '500' }}>Earnings</div>
                       <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#166534' }}>
                         ${(level.earnings || 0).toFixed(2)}
                       </div>
                     </div>
 
                     <div style={{
-                      padding: '12px',
+                      padding: '16px',
                       backgroundColor: '#fef3c7',
-                      borderRadius: '6px'
+                      borderRadius: '12px'
                     }}>
-                      <div style={{ fontSize: '12px', color: '#6b7280' }}>Commission Rate</div>
+                      <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px', fontWeight: '500' }}>Commission</div>
                       <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#92400e' }}>
                         {level.commissionRate || 0}%
                       </div>
@@ -243,17 +335,34 @@ export default function Referrals() {
                   </div>
 
                   {level.users && level.users.length > 0 && (
-                    <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
-                      <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>Users:</div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ 
+                      marginTop: '16px', 
+                      paddingTop: '16px', 
+                      borderTop: '1px solid #e5e7eb' 
+                    }}>
+                      <div style={{ 
+                        fontSize: '14px', 
+                        color: '#6b7280', 
+                        marginBottom: '12px',
+                        fontWeight: '500'
+                      }}>
+                        Users:
+                      </div>
+                      <div style={{ 
+                        display: 'flex', 
+                        flexWrap: 'wrap', 
+                        gap: '8px' 
+                      }}>
                         {level.users.slice(0, 10).map((user, idx) => (
                           <span
                             key={idx}
                             style={{
-                              padding: '6px 12px',
+                              padding: '8px 12px',
                               backgroundColor: '#f3f4f6',
-                              borderRadius: '6px',
-                              fontSize: '12px'
+                              borderRadius: '8px',
+                              fontSize: '12px',
+                              fontWeight: '500',
+                              color: '#111827'
                             }}
                           >
                             @{user.username || user.telegramId}
@@ -261,11 +370,12 @@ export default function Referrals() {
                         ))}
                         {level.users.length > 10 && (
                           <span style={{
-                            padding: '6px 12px',
+                            padding: '8px 12px',
                             backgroundColor: '#f3f4f6',
-                            borderRadius: '6px',
+                            borderRadius: '8px',
                             fontSize: '12px',
-                            color: '#6b7280'
+                            color: '#6b7280',
+                            fontWeight: '500'
                           }}>
                             +{level.users.length - 10} more
                           </span>
@@ -279,18 +389,41 @@ export default function Referrals() {
           ) : (
             <div style={{ 
               textAlign: 'center', 
-              padding: '40px', 
+              padding: '60px 20px', 
               color: '#6b7280',
-              marginTop: '20px',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px'
+              background: 'white',
+              borderRadius: '16px',
+              border: '1px solid #e5e7eb'
             }}>
-              <p>No referrals yet. Share your referral link to start earning commissions!</p>
+              <p style={{ fontSize: '16px', margin: 0 }}>
+                No referrals yet. Share your referral link to start earning commissions!
+              </p>
             </div>
           )}
         </div>
       </div>
+
+      <style jsx>{`
+        @media (min-width: 769px) {
+          div[style*="marginLeft: 0"] {
+            margin-left: 250px !important;
+            width: calc(100% - 250px) !important;
+          }
+          div[style*="marginTop: '60px'"] {
+            margin-top: 20px !important;
+          }
+        }
+        @media (max-width: 768px) {
+          div[style*="gridTemplateColumns"] {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+        }
+        @media (max-width: 480px) {
+          div[style*="gridTemplateColumns"] {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
-

@@ -3,6 +3,11 @@ import cors from 'cors';
 import authRoutes from './routes/auth.routes.js';
 import botRoutes from './routes/bot.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+import userRoutes from './routes/user.routes.js';
+import packageRoutes from './routes/package.routes.js';
+import depositRoutes from './routes/deposit.routes.js';
+import withdrawalRoutes from './routes/withdrawal.routes.js';
+import referralRoutes from './routes/referral.routes.js';
 
 const app = express();
 
@@ -15,6 +20,14 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/auth', authRoutes);
 app.use('/bot', botRoutes);
 app.use('/admin', adminRoutes);
+
+// API Routes
+app.use('/api/user', userRoutes);
+app.use('/api/packages', packageRoutes);
+app.use('/api/deposit', depositRoutes);
+app.use('/api/withdrawals', withdrawalRoutes);
+app.use('/api/withdraw', withdrawalRoutes);
+app.use('/api/referral', referralRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
