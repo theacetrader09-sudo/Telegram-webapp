@@ -65,6 +65,31 @@ export default function Dashboard() {
     }
   }, [router]);
 
+  const handleRefresh = async () => {
+    setLoading(true);
+    try {
+      const userResponse = await getUser();
+      if (userResponse.success) {
+        setWallet(userResponse.wallet);
+      } else {
+        showToast(userResponse.error || 'Failed to load wallet', 'error');
+      }
+
+      const roiResponse = await getROI();
+      if (roiResponse.success) {
+        setRoiSummary(roiResponse);
+        showToast('Dashboard refreshed!', 'success');
+      } else {
+        showToast(roiResponse.error || 'Failed to refresh ROI data', 'error');
+      }
+    } catch (err) {
+      console.error('Error refreshing data:', err);
+      showToast('Failed to refresh data', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const copyReferralLink = () => {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(referralLink);

@@ -5,6 +5,7 @@ import {
   runROI, 
   sendROI, 
   getROILogsHandler,
+  backfillROI,
   getPendingDeposits,
   approveDeposit,
   rejectDeposit,
@@ -118,6 +119,7 @@ router.get('/deposits/status', async (req, res) => {
   }
 });
 router.post('/run-roi', runROI);
+router.post('/backfill-roi', backfillROI);
 router.post('/send-roi', sendROI);
 router.get('/roi-logs', getROILogsHandler);
 

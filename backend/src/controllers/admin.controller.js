@@ -141,6 +141,54 @@ export const sendROI = async (req, res) => {
 };
 
 /**
+ * Backfill ROI for all active deposits
+ * POST /admin/backfill-roi
+ */
+export const backfillROI = async (req, res) => {
+  try {
+    const adminId = req.admin?.id || 'system';
+    
+    console.log(`🔄 Admin ${adminId} triggering ROI backfill...`);
+
+    // Import and run backfill
+    const { default: backfillROIFn } = await import('../scripts/backfillROI.js');
+    const result = await backfillROIFn();
+
+    await logAdminAction({
+      adminId,
+      action: 'BACKFILL_ROI',
+      status: 'SUCCESS',
+      details: {
+        processed: result.processed,
+        totalROI: result.totalROI,
+        errors: result.errors?.length || 0
+      }
+    });
+
+    return res.json({
+      success: true,
+      ...result,
+      message: result.message || 'ROI backfill completed successfully'
+    });
+  } catch (error) {
+    console.error('Error in backfillROI:', error);
+    
+    await logAdminAction({
+      adminId: req.admin?.id || 'system',
+      action: 'BACKFILL_ROI',
+      status: 'FAILED',
+      error: error.message
+    });
+
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to backfill ROI',
+      message: error.message
+    });
+  }
+};
+
+/**
  * Get ROI calculation logs
  * GET /admin/roi-logs
  */

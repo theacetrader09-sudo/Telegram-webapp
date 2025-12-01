@@ -177,7 +177,7 @@ export const processDepositROI = async (deposit) => {
     console.log(`✅ Created ROI record for user ${user.id}: $${dailyROI.toFixed(2)} at ${roiRecord.createdAt.toISOString()}`);
 
     // Update user wallet balance
-    await tx.wallet.update({
+    const updatedWallet = await tx.wallet.update({
       where: { userId: user.id },
       data: {
         balance: {
@@ -185,6 +185,8 @@ export const processDepositROI = async (deposit) => {
         }
       }
     });
+
+    console.log(`💰 Wallet updated for user ${user.id}: New balance = $${updatedWallet.balance.toFixed(2)} (added $${dailyROI.toFixed(2)})`);
 
     // Update deposit lastROIDate
     await tx.deposit.update({

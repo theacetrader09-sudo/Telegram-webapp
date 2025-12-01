@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { verifyAdmin, runROIAdmin, getROILogsAdmin } from '../../../services/api';
+import { verifyAdmin, runROIAdmin, backfillROIAdmin, getROILogsAdmin } from '../../../services/api';
 import { showToast } from '../../../components/Toast';
 
 export default function AdminROI() {
