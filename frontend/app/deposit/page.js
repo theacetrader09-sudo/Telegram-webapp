@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
-import { createDepositRequest, getPendingDeposits, getUser } from '../../services/api';
+import { createDepositRequest, getPendingDeposits, getUserDeposits, getUser } from '../../services/api';
 import { showToast } from '../../components/Toast';
 
 const WALLET_ADDRESS = '0xDa51B37Bf7872f9adeF99eC99365d0673D027E72';
@@ -16,6 +16,8 @@ export default function Deposit() {
   const [loading, setLoading] = useState(false);
   const [wallet, setWallet] = useState(null);
   const [pendingDeposits, setPendingDeposits] = useState([]);
+  const [approvedDeposits, setApprovedDeposits] = useState([]);
+  const [totalDeposited, setTotalDeposited] = useState(0);
   const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
@@ -33,9 +35,10 @@ export default function Deposit() {
 
   const loadData = async () => {
     try {
-      const [userResponse, pendingResponse] = await Promise.all([
+      const [userResponse, pendingResponse, approvedResponse] = await Promise.all([
         getUser(),
-        getPendingDeposits()
+        getPendingDeposits(),
+        getUserDeposits()
       ]);
 
       if (userResponse.success) {
@@ -44,6 +47,11 @@ export default function Deposit() {
 
       if (pendingResponse.success) {
         setPendingDeposits(pendingResponse.deposits || []);
+      }
+
+      if (approvedResponse.success) {
+        setApprovedDeposits(approvedResponse.deposits || []);
+        setTotalDeposited(approvedResponse.totalDeposited || 0);
       }
     } catch (err) {
       console.error('Error loading data:', err);
@@ -363,9 +371,101 @@ export default function Deposit() {
         </form>
       </div>
 
+      {/* Total Deposited Summary */}
+      {totalDeposited > 0 && (
+        <div style={{ 
+          marginBottom: '20px',
+          padding: '20px',
+          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+          borderRadius: '16px',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+          color: 'white',
+          width: '100%'
+        }}>
+          <div style={{ fontSize: 'clamp(12px, 3vw, 14px)', opacity: 0.9, marginBottom: '8px', fontWeight: '500' }}>
+            Total Deposited
+          </div>
+          <div style={{ fontSize: 'clamp(28px, 7vw, 36px)', fontWeight: 'bold', wordBreak: 'break-word' }}>
+            ${totalDeposited.toFixed(2)}
+          </div>
+          <div style={{ fontSize: 'clamp(11px, 2.5vw, 12px)', opacity: 0.8, marginTop: '4px' }}>
+            {approvedDeposits.length} approved deposit{approvedDeposits.length !== 1 ? 's' : ''}
+          </div>
+        </div>
+      )}
+
+      {/* Approved Deposits */}
+      {approvedDeposits.length > 0 && (
+        <div style={{ 
+          marginBottom: '20px',
+          padding: '20px',
+          background: 'white',
+          borderRadius: '16px',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+          border: '1px solid #e5e7eb',
+          width: '100%'
+        }}>
+          <h2 style={{ 
+            marginTop: 0,
+            marginBottom: '16px',
+            fontSize: 'clamp(18px, 4vw, 20px)',
+            fontWeight: '600',
+            color: '#111827'
+          }}>
+            Approved Deposits
+          </h2>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {approvedDeposits.map((deposit) => (
+              <div
+                key={deposit.id}
+                style={{
+                  padding: '16px',
+                  backgroundColor: deposit.status === 'ACTIVE' ? '#d1fae5' : '#f0fdf4',
+                  borderRadius: '12px',
+                  border: `1px solid ${deposit.status === 'ACTIVE' ? '#86efac' : '#bbf7d0'}`
+                }}
+              >
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  marginBottom: '8px',
+                  flexWrap: 'wrap',
+                  gap: '8px'
+                }}>
+                  <div style={{ fontSize: 'clamp(16px, 4vw, 18px)', fontWeight: '600', color: '#065f46' }}>
+                    ${deposit.amount.toFixed(2)}
+                  </div>
+                  <span style={{
+                    padding: '6px 12px',
+                    backgroundColor: deposit.status === 'ACTIVE' ? '#10b981' : '#6ee7b7',
+                    color: 'white',
+                    borderRadius: '12px',
+                    fontSize: 'clamp(11px, 2.5vw, 12px)',
+                    fontWeight: '500'
+                  }}>
+                    {deposit.status}
+                  </span>
+                </div>
+                {deposit.package && (
+                  <div style={{ fontSize: 'clamp(12px, 3vw, 14px)', color: '#047857', marginBottom: '4px' }}>
+                    Package: {deposit.package.name} ({deposit.package.dailyROI}% daily)
+                  </div>
+                )}
+                <div style={{ fontSize: 'clamp(11px, 2.5vw, 12px)', color: '#6b7280' }}>
+                  {deposit.status === 'APPROVED' ? 'Approved' : 'Activated'}: {new Date(deposit.approvedAt || deposit.createdAt).toLocaleDateString()}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Pending Deposits */}
       {pendingDeposits.length > 0 && (
         <div style={{ 
+          marginBottom: '20px',
           padding: '20px',
           background: 'white',
           borderRadius: '16px',

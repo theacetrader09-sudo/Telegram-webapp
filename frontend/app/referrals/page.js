@@ -11,6 +11,7 @@ export default function Referrals() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [referralLink, setReferralLink] = useState('');
+  const [expandedLevels, setExpandedLevels] = useState({});
 
   useEffect(() => {
     const checkAuth = () => {
@@ -329,6 +330,91 @@ export default function Referrals() {
                     </div>
                   </div>
                 </div>
+
+                {/* Transaction History Toggle */}
+                {level.transactions && level.transactions.length > 0 && (
+                  <div style={{ 
+                    marginTop: '12px', 
+                    paddingTop: '12px', 
+                    borderTop: '1px solid #e5e7eb' 
+                  }}>
+                    <button
+                      onClick={() => setExpandedLevels(prev => ({
+                        ...prev,
+                        [level.level]: !prev[level.level]
+                      }))}
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        backgroundColor: '#f9fafb',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: 'clamp(12px, 3vw, 14px)',
+                        fontWeight: '500',
+                        color: '#111827',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <span>Transaction History ({level.transactions.length})</span>
+                      <span style={{ fontSize: '18px' }}>
+                        {expandedLevels[level.level] ? '▼' : '▶'}
+                      </span>
+                    </button>
+
+                    {expandedLevels[level.level] && (
+                      <div style={{
+                        marginTop: '12px',
+                        padding: '12px',
+                        backgroundColor: '#f9fafb',
+                        borderRadius: '8px',
+                        maxHeight: '300px',
+                        overflowY: 'auto'
+                      }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {level.transactions.map((transaction, idx) => (
+                            <div
+                              key={transaction.id || idx}
+                              style={{
+                                padding: '10px',
+                                backgroundColor: 'white',
+                                borderRadius: '8px',
+                                border: '1px solid #e5e7eb',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                flexWrap: 'wrap',
+                                gap: '8px'
+                              }}
+                            >
+                              <div style={{ flex: 1, minWidth: '150px' }}>
+                                <div style={{ fontSize: 'clamp(12px, 3vw, 14px)', fontWeight: '600', color: '#10b981', marginBottom: '4px' }}>
+                                  ${transaction.amount.toFixed(2)}
+                                </div>
+                                <div style={{ fontSize: 'clamp(10px, 2.5vw, 12px)', color: '#6b7280' }}>
+                                  {new Date(transaction.createdAt).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </div>
+                              </div>
+                              {transaction.fromUser && (
+                                <div style={{ fontSize: 'clamp(11px, 2.5vw, 12px)', color: '#6b7280' }}>
+                                  From: @{transaction.fromUser.username || transaction.fromUser.telegramId}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {level.users && level.users.length > 0 && (
                   <div style={{ 

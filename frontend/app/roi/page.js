@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import ROITransactionModal from '../../components/ROITransactionModal';
 import { getROI } from '../../services/api';
 import { showToast } from '../../components/Toast';
 
@@ -10,6 +11,7 @@ export default function ROI() {
   const [roiData, setRoiData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showROIModal, setShowROIModal] = useState(false);
 
   useEffect(() => {
     const checkAuth = () => {
@@ -133,16 +135,29 @@ export default function ROI() {
         marginBottom: '20px',
         width: '100%'
       }}>
-        <div style={{
-          padding: '16px',
-          background: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-          border: '1px solid #e5e7eb',
-          width: '100%'
-        }}>
+        <div 
+          onClick={() => setShowROIModal(true)}
+          style={{
+            padding: '16px',
+            background: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+            border: '1px solid #e5e7eb',
+            width: '100%',
+            cursor: 'pointer',
+            transition: 'all 0.2s'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.05)';
+          }}
+        >
           <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '6px', fontWeight: '500' }}>
-            Total ROI
+            Total ROI <span style={{ fontSize: '10px', color: '#9ca3af' }}>👆 Tap to view</span>
           </div>
           <div style={{ fontSize: 'clamp(18px, 5vw, 24px)', fontWeight: 'bold', color: '#166534', wordBreak: 'break-word' }}>
             ${totalROI.toFixed(2)}
@@ -269,6 +284,15 @@ export default function ROI() {
           </div>
         )}
       </div>
+
+      {/* ROI Transaction Modal */}
+      <ROITransactionModal
+        isOpen={showROIModal}
+        onClose={() => setShowROIModal(false)}
+        title="Total ROI Transaction History"
+        transactions={records}
+        type="SELF"
+      />
     </div>
   );
 }

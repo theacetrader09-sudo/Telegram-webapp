@@ -50,12 +50,59 @@ export const getReferralTree = async (req, res) => {
         _sum: { amount: true }
       });
 
+      // Get transaction history for this level (from current user's perspective)
+      const levelTransactions = await prisma.rOIRecord.findMany({
+        where: {
+          userId: userId, // Current user's referral commissions
+          type: `REFERRAL_LEVEL_${level + 1}`
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 20 // Last 20 transactions
+      });
+
+      // Get deposit and user info for each transaction
+      const transactionsWithDetails = await Promise.all(
+        levelTransactions.map(async (t) => {
+          let fromUser = null;
+          if (t.depositId) {
+            const deposit = await prisma.deposit.findUnique({
+              where: { id: t.depositId },
+              include: {
+                user: {
+                  select: {
+                    telegramId: true,
+                    username: true,
+                    firstName: true,
+                    lastName: true
+                  }
+                }
+              }
+            });
+            if (deposit?.user) {
+              fromUser = {
+                telegramId: deposit.user.telegramId,
+                username: deposit.user.username,
+                firstName: deposit.user.firstName,
+                lastName: deposit.user.lastName
+              };
+            }
+          }
+          return {
+            id: t.id,
+            amount: t.amount,
+            createdAt: t.createdAt,
+            fromUser
+          };
+        })
+      );
+
       levels.push({
         level: level + 1,
         count: nextLevelUsers.length,
         users: nextLevelUsers,
         earnings: levelEarnings._sum.amount || 0,
-        commissionRate: (COMMISSION_RATES[level] || 0) * 100 // Convert to percentage
+        commissionRate: (COMMISSION_RATES[level] || 0) * 100, // Convert to percentage
+        transactions: transactionsWithDetails
       });
 
       currentLevelUsers = nextLevelUsers;

@@ -14,9 +14,21 @@ export const getWithdrawals = async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
+    // Calculate total withdrawn (completed and approved)
+    const totalWithdrawn = await prisma.withdrawal.aggregate({
+      where: { 
+        userId,
+        status: { in: ['APPROVED', 'COMPLETED'] }
+      },
+      _sum: { amount: true },
+      _count: true
+    });
+
     return res.json({
       success: true,
-      withdrawals
+      withdrawals,
+      totalWithdrawn: totalWithdrawn._sum.amount || 0,
+      withdrawalCount: totalWithdrawn._count || 0
     });
   } catch (error) {
     console.error('Get withdrawals error:', error);

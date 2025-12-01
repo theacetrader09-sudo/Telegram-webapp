@@ -10,6 +10,7 @@ export default function Withdrawals() {
   const router = useRouter();
   const [withdrawals, setWithdrawals] = useState([]);
   const [wallet, setWallet] = useState(null);
+  const [totalWithdrawn, setTotalWithdrawn] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState('');
@@ -36,6 +37,7 @@ export default function Withdrawals() {
 
       if (withdrawalsResponse.success) {
         setWithdrawals(withdrawalsResponse.withdrawals || []);
+        setTotalWithdrawn(withdrawalsResponse.totalWithdrawn || 0);
       } else {
         showToast(withdrawalsResponse.error || 'Failed to load withdrawals', 'error');
       }
@@ -208,6 +210,29 @@ export default function Withdrawals() {
           fontSize: 'clamp(12px, 3vw, 14px)'
         }}>
           {error}
+        </div>
+      )}
+
+      {/* Total Withdrawn Summary */}
+      {totalWithdrawn > 0 && (
+        <div style={{ 
+          marginBottom: '20px',
+          padding: '20px',
+          background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+          borderRadius: '16px',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+          color: 'white',
+          width: '100%'
+        }}>
+          <div style={{ fontSize: 'clamp(12px, 3vw, 14px)', opacity: 0.9, marginBottom: '8px', fontWeight: '500' }}>
+            Total Withdrawn
+          </div>
+          <div style={{ fontSize: 'clamp(28px, 7vw, 36px)', fontWeight: 'bold', wordBreak: 'break-word' }}>
+            ${totalWithdrawn.toFixed(2)}
+          </div>
+          <div style={{ fontSize: 'clamp(11px, 2.5vw, 12px)', opacity: 0.8, marginTop: '4px' }}>
+            {withdrawals.filter(w => w.status === 'COMPLETED' || w.status === 'APPROVED').length} completed withdrawal{withdrawals.filter(w => w.status === 'COMPLETED' || w.status === 'APPROVED').length !== 1 ? 's' : ''}
+          </div>
         </div>
       )}
 

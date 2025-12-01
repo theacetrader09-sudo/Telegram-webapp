@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ROICountdown from '../../components/ROICountdown';
+import ROITransactionModal from '../../components/ROITransactionModal';
 import { getUser, getROI } from '../../services/api';
 import { showToast } from '../../components/Toast';
 
@@ -13,6 +14,8 @@ export default function Dashboard() {
   const [roiSummary, setRoiSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [referralLink, setReferralLink] = useState('');
+  const [showROIModal, setShowROIModal] = useState(false);
+  const [showTeamIncomeModal, setShowTeamIncomeModal] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -109,10 +112,11 @@ export default function Dashboard() {
 
   const balance = wallet?.balance || 0;
   const totalROI = roiSummary?.totalROI || 0;
+  const todayROI = roiSummary?.todayROI || 0;
   const totalReferrals = roiSummary?.totalReferrals || 0;
-  const totalDeposits = roiSummary?.totalDeposits || 0;
-  const activeDeposits = roiSummary?.activeDeposits || 0;
+  const activePackage = roiSummary?.activePackage || null;
   const totalReferralCount = roiSummary?.totalReferralsCount || 0;
+  const roiRecords = roiSummary?.roiRecords || [];
 
   return (
     <div style={{ 
@@ -190,6 +194,46 @@ export default function Dashboard() {
         marginBottom: '16px',
         width: '100%'
       }}>
+        {/* Active Package Card */}
+        {activePackage ? (
+          <div style={{
+            padding: '16px',
+            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+            borderRadius: '12px',
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+            border: '1px solid #e5e7eb',
+            width: '100%',
+            color: 'white'
+          }}>
+            <div style={{ fontSize: '11px', marginBottom: '6px', fontWeight: '500', opacity: 0.9 }}>
+              Active Package
+            </div>
+            <div style={{ fontSize: 'clamp(14px, 4vw, 16px)', fontWeight: '600', marginBottom: '4px' }}>
+              {activePackage.name}
+            </div>
+            <div style={{ fontSize: 'clamp(12px, 3vw, 14px)', opacity: 0.9 }}>
+              ${activePackage.amount.toFixed(2)} • {activePackage.dailyROI}% daily
+            </div>
+          </div>
+        ) : (
+          <div style={{
+            padding: '16px',
+            background: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+            border: '1px solid #e5e7eb',
+            width: '100%'
+          }}>
+            <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '6px', fontWeight: '500' }}>
+              Active Package
+            </div>
+            <div style={{ fontSize: 'clamp(14px, 4vw, 16px)', fontWeight: '500', color: '#6b7280' }}>
+              No active package
+            </div>
+          </div>
+        )}
+
+        {/* Today's ROI Income */}
         <div style={{
           padding: '16px',
           background: 'white',
@@ -199,61 +243,74 @@ export default function Dashboard() {
           width: '100%'
         }}>
           <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '6px', fontWeight: '500' }}>
-            Total Deposits
+            Today's ROI Income
           </div>
           <div style={{ fontSize: 'clamp(18px, 5vw, 24px)', fontWeight: 'bold', color: '#1e40af', wordBreak: 'break-word' }}>
-            ${totalDeposits.toFixed(2)}
+            ${todayROI.toFixed(2)}
           </div>
         </div>
 
-        <div style={{
-          padding: '16px',
-          background: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-          border: '1px solid #e5e7eb',
-          width: '100%'
-        }}>
+        {/* Total ROI - Clickable */}
+        <div 
+          onClick={() => setShowROIModal(true)}
+          style={{
+            padding: '16px',
+            background: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+            border: '1px solid #e5e7eb',
+            width: '100%',
+            cursor: 'pointer',
+            transition: 'all 0.2s'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.05)';
+          }}
+        >
           <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '6px', fontWeight: '500' }}>
-            Total ROI
+            Total ROI <span style={{ fontSize: '10px', color: '#9ca3af' }}>👆 Tap to view</span>
           </div>
           <div style={{ fontSize: 'clamp(18px, 5vw, 24px)', fontWeight: 'bold', color: '#166534', wordBreak: 'break-word' }}>
             ${totalROI.toFixed(2)}
           </div>
         </div>
 
-        <div style={{
-          padding: '16px',
-          background: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-          border: '1px solid #e5e7eb',
-          width: '100%'
-        }}>
+        {/* Team Income (Referral Income) - Clickable */}
+        <div 
+          onClick={() => setShowTeamIncomeModal(true)}
+          style={{
+            padding: '16px',
+            background: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+            border: '1px solid #e5e7eb',
+            width: '100%',
+            cursor: 'pointer',
+            transition: 'all 0.2s'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.05)';
+          }}
+        >
           <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '6px', fontWeight: '500' }}>
-            Referral Income
+            Team Income <span style={{ fontSize: '10px', color: '#9ca3af' }}>👆 Tap to view</span>
           </div>
           <div style={{ fontSize: 'clamp(18px, 5vw, 24px)', fontWeight: 'bold', color: '#92400e', wordBreak: 'break-word' }}>
             ${totalReferrals.toFixed(2)}
           </div>
         </div>
 
-        <div style={{
-          padding: '16px',
-          background: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-          border: '1px solid #e5e7eb',
-          width: '100%'
-        }}>
-          <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '6px', fontWeight: '500' }}>
-            Active Deposits
-          </div>
-          <div style={{ fontSize: 'clamp(18px, 5vw, 24px)', fontWeight: 'bold', color: '#9f1239' }}>
-            {activeDeposits}
-          </div>
-        </div>
-
+        {/* Total Referrals */}
         <div style={{
           padding: '16px',
           background: 'white',
@@ -270,6 +327,23 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Transaction Modals */}
+      <ROITransactionModal
+        isOpen={showROIModal}
+        onClose={() => setShowROIModal(false)}
+        title="Total ROI Transaction History"
+        transactions={roiRecords}
+        type="SELF"
+      />
+
+      <ROITransactionModal
+        isOpen={showTeamIncomeModal}
+        onClose={() => setShowTeamIncomeModal(false)}
+        title="Team Income (Referral) Transaction History"
+        transactions={roiRecords}
+        type="REFERRAL"
+      />
 
       {/* Referral Link Card */}
       <div style={{ 

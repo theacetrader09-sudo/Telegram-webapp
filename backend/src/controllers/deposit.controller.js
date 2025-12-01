@@ -152,23 +152,47 @@ export const getPendingDeposits = async (req, res) => {
 };
 
 /**
- * Get all user deposits
+ * Get all user deposits (only APPROVED and ACTIVE)
  */
 export const getUserDeposits = async (req, res) => {
   try {
     const userId = req.user.id;
 
+    // Get only approved/active deposits
     const deposits = await prisma.deposit.findMany({
-      where: { userId },
+      where: { 
+        userId,
+        status: { in: ['APPROVED', 'ACTIVE'] }
+      },
       include: {
-        package: true
+        package: {
+          select: {
+            id: true,
+            name: true,
+            dailyROI: true,
+            minAmount: true,
+            maxAmount: true
+          }
+        }
       },
       orderBy: { createdAt: 'desc' }
     });
 
+    // Calculate total approved deposits
+    const totalDeposits = await prisma.deposit.aggregate({
+      where: { 
+        userId,
+        status: { in: ['APPROVED', 'ACTIVE'] }
+      },
+      _sum: { amount: true },
+      _count: true
+    });
+
     return res.json({
       success: true,
-      deposits
+      deposits,
+      totalDeposited: totalDeposits._sum.amount || 0,
+      depositCount: totalDeposits._count || 0
     });
   } catch (error) {
     console.error('Get user deposits error:', error);
