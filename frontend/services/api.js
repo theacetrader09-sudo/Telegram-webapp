@@ -545,3 +545,27 @@ export const resetUserReferralAdmin = async (userId) => {
   }
 };
 
+/**
+ * Update user referral (admin) - assign new referrer
+ * @param {string} userId - User ID to update
+ * @param {string} referrerId - New referrer's user ID
+ */
+export const updateUserReferralAdmin = async (userId, referrerId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/update-referral`, {
+      method: 'POST',
+      headers: getAdminHeaders(),
+      body: JSON.stringify({ referrerId }),
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Update user referral error:', error);
+    return {
+      success: false,
+      error: error.message || 'Network error'
+    };
+  }
+};
+

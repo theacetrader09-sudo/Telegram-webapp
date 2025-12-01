@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { verifyAdmin, getAllUsersAdmin, getUserByIdAdmin, resetUserReferralAdmin } from '../../../services/api';
+import { verifyAdmin, getAllUsersAdmin, getUserByIdAdmin, resetUserReferralAdmin, updateUserReferralAdmin } from '../../../services/api';
 import { showToast } from '../../../components/Toast';
 
 export default function AdminUsers() {
@@ -17,6 +17,9 @@ export default function AdminUsers() {
   const [userDetail, setUserDetail] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [resettingReferral, setResettingReferral] = useState(null);
+  const [editingReferral, setEditingReferral] = useState(false);
+  const [newReferrerId, setNewReferrerId] = useState('');
+  const [updatingReferral, setUpdatingReferral] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -89,6 +92,9 @@ export default function AdminUsers() {
       if (response.success) {
         showToast('User referral reset successfully! User can now be referred again.', 'success');
         loadUsers(); // Reload users list
+        if (userDetail && userDetail.id === userId) {
+          loadUserDetail(userId); // Reload user details if modal is open
+        }
       } else {
         showToast(response.error || 'Failed to reset referral', 'error');
       }
@@ -96,6 +102,36 @@ export default function AdminUsers() {
       showToast(err.message || 'Failed to reset referral', 'error');
     } finally {
       setResettingReferral(null);
+    }
+  };
+
+  const handleUpdateReferral = async () => {
+    if (!newReferrerId.trim()) {
+      showToast('Please enter a referrer user ID', 'error');
+      return;
+    }
+
+    if (!userDetail) {
+      showToast('User details not loaded', 'error');
+      return;
+    }
+
+    setUpdatingReferral(true);
+    try {
+      const response = await updateUserReferralAdmin(userDetail.id, newReferrerId.trim());
+      if (response.success) {
+        showToast('User referral updated successfully!', 'success');
+        setEditingReferral(false);
+        setNewReferrerId('');
+        loadUserDetail(userDetail.id); // Reload user details
+        loadUsers(); // Reload users list
+      } else {
+        showToast(response.error || 'Failed to update referral', 'error');
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to update referral', 'error');
+    } finally {
+      setUpdatingReferral(false);
     }
   };
 
@@ -407,6 +443,8 @@ export default function AdminUsers() {
         }} onClick={() => {
           setShowUserDetail(false);
           setUserDetail(null);
+          setEditingReferral(false);
+          setNewReferrerId('');
         }}>
           <div style={{
             backgroundColor: 'white',
@@ -435,6 +473,8 @@ export default function AdminUsers() {
                     onClick={() => {
                       setShowUserDetail(false);
                       setUserDetail(null);
+                      setEditingReferral(false);
+                      setNewReferrerId('');
                     }}
                     style={{
                       padding: '8px 12px',
@@ -486,9 +526,110 @@ export default function AdminUsers() {
                     </div>
                     <div>
                       <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Referrer</div>
-                      <div style={{ fontSize: '14px' }}>
-                        {userDetail.referrer ? `@${userDetail.referrer.username || userDetail.referrer.telegramId}` : 'None'}
-                      </div>
+                      {editingReferral ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <input
+                              type="text"
+                              value={newReferrerId}
+                              onChange={(e) => setNewReferrerId(e.target.value)}
+                              placeholder="Enter referrer user ID"
+                              style={{
+                                padding: '8px 12px',
+                                border: '1px solid #d1d5db',
+                                borderRadius: '6px',
+                                fontSize: '14px',
+                                flex: 1,
+                                minWidth: '200px'
+                              }}
+                              disabled={updatingReferral}
+                            />
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              onClick={handleUpdateReferral}
+                              disabled={updatingReferral || !newReferrerId.trim()}
+                              style={{
+                                padding: '8px 16px',
+                                backgroundColor: updatingReferral || !newReferrerId.trim() ? '#9ca3af' : '#10b981',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                cursor: updatingReferral || !newReferrerId.trim() ? 'not-allowed' : 'pointer',
+                                fontSize: '13px',
+                                fontWeight: '500',
+                                flex: 1
+                              }}
+                            >
+                              {updatingReferral ? 'Saving...' : 'Save'}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setEditingReferral(false);
+                                setNewReferrerId('');
+                              }}
+                              disabled={updatingReferral}
+                              style={{
+                                padding: '8px 16px',
+                                backgroundColor: '#e5e7eb',
+                                color: '#374151',
+                                border: 'none',
+                                borderRadius: '6px',
+                                cursor: updatingReferral ? 'not-allowed' : 'pointer',
+                                fontSize: '13px',
+                                fontWeight: '500',
+                                flex: 1
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '4px' }}>
+                            Enter the referrer's User ID (database ID, not Telegram ID)
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', flexWrap: 'wrap' }}>
+                          <div style={{ fontSize: '14px', flex: 1 }}>
+                            {userDetail.referrer ? (
+                              <div>
+                                <div style={{ fontWeight: '500', marginBottom: '4px' }}>
+                                  @{userDetail.referrer.username || userDetail.referrer.telegramId}
+                                </div>
+                                {userDetail.referrer.firstName && (
+                                  <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                                    {userDetail.referrer.firstName} {userDetail.referrer.lastName || ''}
+                                  </div>
+                                )}
+                                <div style={{ fontSize: '11px', color: '#9ca3af', fontFamily: 'monospace', marginTop: '4px' }}>
+                                  ID: {userDetail.referrer.id}
+                                </div>
+                              </div>
+                            ) : (
+                              <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>No referrer</span>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => {
+                              setEditingReferral(true);
+                              setNewReferrerId(userDetail.referrer?.id || '');
+                            }}
+                            style={{
+                              padding: '6px 12px',
+                              backgroundColor: '#3b82f6',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              fontWeight: '500',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            {userDetail.referrer ? 'Edit' : 'Assign'}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

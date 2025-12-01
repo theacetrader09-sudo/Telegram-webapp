@@ -1032,3 +1032,127 @@ export const resetUserReferral = async (req, res) => {
   }
 };
 
+/**
+ * Update user referral (assign new referrer)
+ * POST /admin/users/:id/update-referral
+ * Body: { referrerId: string } - Referrer's user ID (not telegramId)
+ */
+export const updateUserReferral = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { referrerId } = req.body;
+
+    if (!referrerId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Referrer ID is required'
+      });
+    }
+
+    // Get the user to update
+    const user = await prisma.user.findUnique({
+      where: { id }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Get the referrer user
+    const referrer = await prisma.user.findUnique({
+      where: { id: referrerId }
+    });
+
+    if (!referrer) {
+      return res.status(404).json({
+        success: false,
+        error: 'Referrer user not found'
+      });
+    }
+
+    // Prevent self-referral
+    if (referrer.id === user.id) {
+      return res.status(400).json({
+        success: false,
+        error: 'User cannot refer themselves'
+      });
+    }
+
+    // Check for referral loops (prevent circular references)
+    if (user.referralChain.includes(referrer.telegramId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot create referral loop: This user is already in the referrer\'s downline'
+      });
+    }
+
+    // Build new referral chain
+    const newReferralChain = [referrer.telegramId, ...referrer.referralChain].slice(0, 10);
+
+    // Store previous referrer for logging
+    const previousReferrer = user.referredBy;
+
+    // Update user referral
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: {
+        referredBy: referrer.telegramId,
+        referralChain: newReferralChain
+      },
+      include: {
+        referrer: {
+          select: {
+            id: true,
+            telegramId: true,
+            username: true,
+            firstName: true,
+            lastName: true
+          }
+        }
+      }
+    });
+
+    // Log admin action
+    await prisma.systemLog.create({
+      data: {
+        action: 'ADMIN_ACTION',
+        userId: id,
+        status: 'SUCCESS',
+        details: {
+          action: 'UPDATE_USER_REFERRAL',
+          adminId: req.admin?.id || 'admin',
+          previousReferrer: previousReferrer,
+          newReferrer: referrer.telegramId,
+          newReferrerId: referrer.id,
+          userTelegramId: user.telegramId
+        }
+      }
+    });
+
+    console.log(`✅ Admin updated referral for user ${user.telegramId} (ID: ${id}) to ${referrer.telegramId} (ID: ${referrerId})`);
+
+    return res.json({
+      success: true,
+      message: 'User referral updated successfully',
+      user: {
+        id: updatedUser.id,
+        telegramId: updatedUser.telegramId,
+        username: updatedUser.username,
+        referredBy: updatedUser.referredBy,
+        referralChain: updatedUser.referralChain,
+        referrer: updatedUser.referrer
+      }
+    });
+  } catch (error) {
+    console.error('Error updating user referral:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to update user referral',
+      message: error.message
+    });
+  }
+};
+
